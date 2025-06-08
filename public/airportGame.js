@@ -2,6 +2,9 @@ import {
   generateMasterMap,
   generateSlaveMapLayout2,
   generateSlaveMapLayout3,
+  infobar,
+  infobar2,
+  infobar3,
   labelMap,
   SVGSTRING,
   TOP_OFFESET,
@@ -16,7 +19,7 @@ var centerText = document.getElementById("center-text");
 
 var socket = io();
 
-// Start of LG Connection
+// Start of LG Connection   
 const galaxyPort = 5433;
 const ip = "lg1";
 const lgSocket = io(`http://${ip}:${galaxyPort}`);
@@ -47,22 +50,30 @@ const ctx = canvas.getContext("2d");
 
 let currentMap = generateMasterMap(rows, cols); //default to master map
 
-/**
- * Screen setup method -> responsible for setting variables for screen
- * @param {Object} screen screen object containing info like screen number and total of screens
- */
+const airplanes = [];
+
+
+
 function screenSetup(screen) {
   nScreens = screen.nScreens;
   currentMap =
     screenNumber == 1
-      ? generateMasterMap(rows, cols)
+      ? generateMasterMap(rows, cols) 
       : screenNumber == 2
       ? generateSlaveMapLayout2(rows, cols)
       : generateSlaveMapLayout3(rows, cols);
 
-  // centerText.innerHTML = `${screenNumber == 1 ? 'WAITING FOR PLAYERS' : ''}`
-
-  // initialize all foods eaten as false on all screens
+    if(screenNumber == 1) {
+      infobar(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }
+    else if(screenNumber == 2) {
+      infobar2(centerText)
+      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 3) {
+      infobar3(centerText)
+      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }
 
   createGrid(currentMap);
 }
@@ -99,6 +110,7 @@ function onCreateplane(aeroplane) {
     };
 
     airplaneImage.src = url;
+    socket.emit("get-aeroplane", airplanes);
   }
 }
 
@@ -110,6 +122,7 @@ socket.on("aeroplane-create", onCreateplane);
  */
 function createGrid(row) {
   addAeroplane(row);
+
 }
 
 // === Draw entire map ===
@@ -151,7 +164,10 @@ function drawMap(row) {
             label: textLabels[key],
             x: x,
             y: y,
+            screen: screenNumber,
           });
+          socket.emit('airport-positions', labelPositions);
+
         }
         ctx.font = "20px MONOSPACE";
         ctx.fontWeight = "bold";
@@ -176,7 +192,7 @@ function drawMap(row) {
   }
 }
 
-const airplanes = [];
+
 const characters = "abcdefghijklmnopqrstuvwxyz";
 let previousConflicts = new Set(); // Track plane pairs that were already alerted
 
@@ -261,13 +277,10 @@ function addAeroplane(row) {
 
         const transferred = handleTraverseAeroplane(plane, screenNumber);
         if (transferred) continue;
-        const shouldBeRed =  plane.conflict;
-        const currentFill = plane.img.src.includes("fill=%22red%22");
-      
-        // Only regenerate image if color state changed
-        if (shouldBeRed && !currentFill) {
+  // Set image color based on conflict status
+        if (plane.conflict) {
           plane.updateImage("red");
-        } else if (!shouldBeRed && currentFill) {
+        } else {
           plane.updateImage("white");
         }
 
@@ -275,7 +288,7 @@ function addAeroplane(row) {
         ctx.translate(plane.x, plane.y);
         
         if (plane.rotation !== undefined && plane.selected) {
-          ctx.rotate(degToRad(airplanes[aeroplanename].rotation));
+          ctx.rotate(degToRad(plane.rotation));
         }
         
         ctx.drawImage(plane.img, -20, -20, 40, 40); 
@@ -377,7 +390,7 @@ function handleTraverseAeroplane(plane, screenNumber) {
       // right → middle
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: canvas.width,
+        x: -3,
         screen: 1,
       });
     }
@@ -388,19 +401,19 @@ function handleTraverseAeroplane(plane, screenNumber) {
   return false;
 }
 
-function postionAeroplane(targetScreenNumber) {
+function postionAeroplane(data) {
   const newAeroplane = {
-    x: labelPositions[0].x,
-    y: labelPositions[0].y,
+    x: data.x,
+    y: data.y,
     label: getCharater(),
-    screen: Number(targetScreenNumber),
+    screen: Number(data.screen),
     dx: 0.5,
     dy: 0,
     rotation: 0,
     selected: false,
 
   };
-  if (Number(screenNumber) === Number(targetScreenNumber)) {
+  if (Number(screenNumber) === Number(data.screen)) {
     socket.emit("create-aeroplane", newAeroplane);
   }
   console.log("Sent create-aeroplane event:", newAeroplane);
@@ -426,12 +439,13 @@ function updatePlane(data) {
     return;
   }
 
+  const rotation = airplanes[aeroplanename]?.rotation;
   switch (data.dir) {
     case "left":
-      airplanes[aeroplanename].rotation += 45;
+      airplanes[aeroplanename].rotation = rotation + 45;
       break;
     case "right":
-      airplanes[aeroplanename].rotation -= 45;
+      airplanes[aeroplanename].rotation = rotation - 45;
       break;
   }
   

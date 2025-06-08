@@ -14,6 +14,8 @@ const filePath = "/public"; // Do not add '/' at the end
 const gameFile = "index.html";
 const mapBuilderFile = "mapbuilder/index.html";
 const controllerFile = "controller/index.html";
+const allpostionAirpots = [];
+const allscreenwidth =[];
 
 // Variables
 var screenNumber = 1;
@@ -67,6 +69,10 @@ app.get("/:id", (req, res) => {
 
   // Handle transfer between screens
   socket.on("transfer-aeroplane", (planeData) => {
+    // const width  = allscreenwidth.findIndex((existing) => existing.screen === planeData.screen);
+    if(planeData.x === -3){
+      planeData.x = allscreenwidth[0].width;
+    }
         console.log("Transferring aeroplane to screen", planeData.screen);
         io.emit("aeroplane-create", planeData);
   });
@@ -97,8 +103,58 @@ socket.on('select-plane', (key) => {
     io.emit('select-aeroplane', { dir: key });
     console.log('Selecting plane', key);
 });
+
+socket.on('airport-positions', (data) => {
+  console.log('====================================');
+  console.log('Received updated airport positions ckient:', data);
+  console.log('====================================');
+  data.forEach((incoming) => {
+    const index = allpostionAirpots.findIndex((existing) => existing.label === incoming.label);
+  
+    if (index !== -1) {
+      // Update existing
+      allpostionAirpots[index].x = incoming.x;
+      allpostionAirpots[index].y = incoming.y;
+      allpostionAirpots[index].screen = incoming.screen;
+    } else {
+      // Add new
+      allpostionAirpots.push(incoming);
+    }
+  });
+  
+  // console.log('New airport positions:', newEntries);
+  // allpostionAirpots.push(...newEntries);
+  console.log('Updated all airport positions:', allpostionAirpots);
+  io.emit('all-airport-positions', allpostionAirpots);
+
+});
  
+
+//callback 
+socket.on('get-airport-positions', (callback) => {
+  callback(allpostionAirpots); // Send back data only to requester
+});
+
+
+socket.on('get-aeroplane', (data) => {
+  // Now re-emit to all connected clients
+  io.emit('aeroplane-data', data); // you can rename this
+});
     
+  socket.on('postwidth', (data) => {
+    console.log('Received updated airport width from server:', data);
+    const index = allscreenwidth.findIndex((existing) => existing.screen === data.screen);
+    if(index !== -1){
+      allscreenwidth[index] = data;
+    }
+    else{
+     allscreenwidth.push(data);}
+  })
+
+  socket.on('get-screen-width', (callback) => {
+    callback(allscreenwidth); 
+  });
+
     function sleep(duration) {
     return new Promise((resolve) => setTimeout(resolve, duration));
   }
@@ -110,3 +166,5 @@ socket.on('select-plane', (key) => {
 http.listen(port, "0.0.0.0", () => {
   console.log(`Listening on port ${port}`);
 });
+
+
