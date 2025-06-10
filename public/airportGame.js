@@ -6,6 +6,7 @@ import {
   infobar2,
   infobar3,
   labelMap,
+  LANDINGSVG,
   SVGSTRING,
   TOP_OFFESET,
 } from "./functions.js";
@@ -53,6 +54,36 @@ let currentMap = generateMasterMap(rows, cols); //default to master map
 const airplanes = [];
 
 
+// Pre-create airplane images to avoid repeated blob creation
+const airplaneImages = {
+  white: null,
+  red: null,
+  takeLandOff: null
+};
+
+// Create images once during initialization
+function createAirplaneImages() {
+  const whiteBlob = new Blob([SVGSTRING], { type: "image/svg+xml;charset=utf-8" });
+  const redSVG = SVGSTRING.replace(/fill="[^"]+"/g, 'fill="red"');
+  const redBlob = new Blob([redSVG], { type: "image/svg+xml;charset=utf-8" });
+  const takeLandOff = new Blob([LANDINGSVG], { type: "image/svg+xml;charset=utf-8" });
+   
+  const whiteUrl = URL.createObjectURL(whiteBlob);
+  const redUrl = URL.createObjectURL(redBlob);
+  const takeLandOffUrl = URL.createObjectURL(takeLandOff);
+  
+  airplaneImages.white = new Image();
+  airplaneImages.red = new Image();
+  airplaneImages.takeLandOff = new Image();
+  
+  airplaneImages.white.src = whiteUrl;
+  airplaneImages.red.src = redUrl;
+  airplaneImages.takeLandOff.src = takeLandOffUrl;
+}
+
+// Initialize images
+createAirplaneImages();
+
 
 function screenSetup(screen) {
   nScreens = screen.nScreens;
@@ -82,34 +113,15 @@ socket.on("new-screen", screenSetup);
 function onCreateplane(aeroplane) {
   // Only render if it's for this screen
   if (Number(screenNumber) === Number(aeroplane.screen)) {
-    // const coloredSVG = SVGSTRING.replace('fill="white"', 'fill="red"');
-    const svgBlob = new Blob([SVGSTRING], {
-      type: "image/svg+xml;charset=utf-8",
-    });
-    const url = URL.createObjectURL(svgBlob);
-    const airplaneImage = new Image();
-
-    airplaneImage.onload = () => {
+    
       airplanes.push({
         ...aeroplane,
-        img: airplaneImage,
+        img: airplaneImages.white,
         dx: aeroplane.dx || 0.5,
         dy: aeroplane.dy || 0,
         rotation: aeroplane.rotation !== undefined ? aeroplane.rotation : 0, 
-        updateImage(color = "white") {
-          const coloredSVG = SVGSTRING.replace(/fill="[^"]+"/g, `fill="${color}"`);
-          const blob = new Blob([coloredSVG], { type: "image/svg+xml" });
-          const url = URL.createObjectURL(blob);
-          const newImg = new Image();
-          newImg.onload = () => {
-            this.img = newImg;
-          };
-          newImg.src = url;
-        },
       });
-    };
 
-    airplaneImage.src = url;
     socket.emit("get-aeroplane", airplanes);
   }
 }
@@ -199,30 +211,6 @@ let previousConflicts = new Set(); // Track plane pairs that were already alerte
 
 function addAeroplane(row) {
   const map = row.map;
-  const svgBlob = new Blob([SVGSTRING], {
-    type: "image/svg+xml;charset=utf-8",
-  });
-  const url = URL.createObjectURL(svgBlob);
-  const airplaneImage = new Image();
-
-  airplaneImage.onload = function () {
-    // Click to add planes
-    // canvas.addEventListener("click", (e) => {
-    //   const rect = canvas.getBoundingClientRect();
-    //   const x = e.clientX - rect.left;
-    //   const y = e.clientY - rect.top;
-
-    //   airplanes.push({
-    //     x,
-    //     y,
-    //     dx: 0,
-    //     dy: 0,
-    //     img: airplaneImage,
-    //     label: getCharater(),
-    //     screen: 1,
-    //     currentMap: 'master',
-    //   });
-    // });
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -278,11 +266,9 @@ function addAeroplane(row) {
         const transferred = handleTraverseAeroplane(plane, screenNumber);
         if (transferred) continue;
   // Set image color based on conflict status
-        if (plane.conflict) {
-          plane.updateImage("red");
-        } else {
-          plane.updateImage("white");
-        }
+        plane.img = plane.conflict ? airplaneImages.red : airplaneImages.white;
+
+        plane.img = plane.altitude === 0 ? airplaneImages.takeLandOff : airplaneImages.white;
 
         ctx.save();
         ctx.translate(plane.x, plane.y);
@@ -290,6 +276,7 @@ function addAeroplane(row) {
         if (plane.rotation !== undefined && plane.selected) {
           ctx.rotate(degToRad(plane.rotation));
         }
+
         
         ctx.drawImage(plane.img, -20, -20, 40, 40); 
         ctx.restore(); 
@@ -306,8 +293,6 @@ function addAeroplane(row) {
     animate();
   };
 
-  airplaneImage.src = url;
-}
 let aeroplanename = null;
 function getCharater() {
   const randomInd = Math.floor(Math.random() * characters.length);
@@ -334,7 +319,7 @@ document.addEventListener("keydown", (e) => {
 
   switch (e.key) {
     case "ArrowUp":
-      airplanes[aeroplanename].dy = -1;
+      airplanes[aeroplanename].dy = -1; 
       break;
     case "ArrowDown":
       airplanes[aeroplanename].dy = 1;
@@ -345,6 +330,14 @@ document.addEventListener("keydown", (e) => {
     case "ArrowRight":
       airplanes[aeroplanename].dx = 1;
       break;
+    case "l":
+      console.log("landed");
+      airplanes[aeroplanename].altitude = 0;
+      break;
+    case "t":
+    console.log("landed");
+    airplanes[aeroplanename].altitude = 1;
+    break;
     case "Escape":
       aeroplanename = null;
       break;
@@ -411,6 +404,8 @@ function postionAeroplane(data) {
     dy: 0,
     rotation: 0,
     selected: false,
+    altitude: 1,
+    conflict: false,
 
   };
   if (Number(screenNumber) === Number(data.screen)) {

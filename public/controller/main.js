@@ -52,7 +52,7 @@ socket.on('all-airport-positions', (data) => {
       button.textContent = airport.label;
   
       button.addEventListener("click", () => {
-        aeroplaneviaSocket(airport);
+        socket.emit('select-plane', airport.label);
       });
   
       postionAirpots.appendChild(button);
@@ -93,8 +93,8 @@ function fright() {
 
 right.addEventListener('click', fright);
 
-submit.addEventListener('click', (event) => {
-    const key = input.value;
-    console.log('direction selected:', key);
-    socket.emit('select-plane', key);
-});
+// submit.addEventListener('click', (event) => {
+//     const key = input.value;
+//     console.log('direction selected:', key);
+//     socket.emit('select-plane', key);
+// });
