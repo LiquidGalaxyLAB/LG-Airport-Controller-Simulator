@@ -98,7 +98,7 @@ export const labelMap = {
   topmiddle: "BST",
   // middlestart: "Middle Start",
   middleend: "LON",
-  middle: "ALT",
+middle: "ALT",
   bottomLeft: "NOR",
   bottomOneThird: "TAM",
   bottommiddle: "MIA"
@@ -112,7 +112,104 @@ export const SVGSTRING = `<svg width="43" height="46" viewBox="0 0 43 46" fill="
 </svg>
 `;
 
-export const TOP_OFFESET = 150
+export const LANDINGSVG =`<svg width="54" height="19" viewBox="0 0 54 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.22995 7.12631C11.5047 7.27476 15.207 7.77768 19.395 8.40171L34.0531 1.28722C34.8544 0.90347 35.7544 0.672488 36.6984 0.608192L40.6842 0.333516C40.9531 0.415731 41.1324 0.470551 40.8988 0.699975C40.6653 0.929428 34.3557 6.60337 30.5455 10.0878C36.266 11.0435 41.4103 11.96 43.6684 12.3769C44.0553 12.4335 44.4437 12.422 44.8097 12.3428C45.1756 12.2638 45.5112 12.1188 45.7958 11.9169L48.7747 9.89041C49.2457 9.5751 49.8394 9.4127 50.4651 9.4281L53.0511 9.58424L48.7354 17.1805C48.2751 17.9697 47.3193 18.4131 46.2763 18.3404C42.0223 18.0818 30.8585 17.2942 22.3163 16.2688C3.40678 13.9882 1.01602 13.2573 0.342646 12.0395C-0.33073 10.8217 4.1648 6.69903 9.22995 7.12631Z" fill="white"/>
+</svg>
+
+`;
+
+export const TOP_OFFESET = 50;
 
 export const airplanes = []
 const offsetX = 0 //offsetX
+
+
+
+export function infobar (container){
+  const time = document.createElement("div");
+  time.id = "time";
+  time.textContent = '10.10.10';
+
+  const command = document.createElement("div");
+  command.id = "command";
+  command.textContent = "DL146 TURN RIGHT HEADING 230 AT 4000 FEET"
+
+  container.appendChild(time);
+  container.appendChild(command);
+}
+
+export function infobar2 (container){
+  const sourcemain = document.createElement("div"); 
+  sourcemain.id = "sourcemain";
+  sourcemain.className = "infobar";
+  const source = document.createElement("div");
+  source.id = "source";
+  source.textContent = "Source: ";
+  source.className = "infobar-label";
+
+  const origin = document.createElement("div");
+  origin.id = "origin";
+  origin.textContent = "ALT";
+  origin.className = "infobar-data";
+
+
+  const destmain = document.createElement("div");
+  destmain.id = "destmain";
+  destmain.className = "infobar";
+
+  const dest = document.createElement("div");
+  dest.id = "dest";
+  dest.textContent = "Dest: ";
+  dest.className = "infobar-label";
+
+  const destination = document.createElement("div"); 
+  destination.id = "destination";
+  destination.textContent = "MIA";
+  destination.className = "infobar-data"; 
+
+
+  sourcemain.appendChild(source);
+  sourcemain.appendChild(origin);
+  destmain.appendChild(dest);
+  destmain.appendChild(destination);
+  container.appendChild(sourcemain);
+  container.appendChild(destmain);
+
+}
+
+
+export function infobar3 (container){
+  const headingMain = document.createElement("div"); 
+  headingMain.className = "infobar";
+
+  const heading = document.createElement("div");
+  heading.id = "heading";
+  heading.textContent = "Heading: ";
+  heading.className = "infobar-label";
+
+  const headingData = document.createElement("div");
+  headingData.id = "headingData";
+  headingData.textContent = "225";
+  headingData.className = "infobar-data";
+
+  const altitudeMain = document.createElement("div");
+  altitudeMain.className = "infobar";
+
+  const altitude = document.createElement("div");
+  altitude.id = "altitude";
+  altitude.textContent = "Altitude: ";
+  altitude.className = "infobar-label";
+
+  const altitudeData = document.createElement("div");
+  altitudeData.id = "altitudeData";
+  altitudeData.textContent = "4000";
+  altitudeData.className = "infobar-data";
+
+
+  headingMain.appendChild(heading);
+  headingMain.appendChild(headingData);
+  altitudeMain.appendChild(altitude);
+  altitudeMain.appendChild(altitudeData);
+  container.appendChild(headingMain);
+  container.appendChild(altitudeMain);
+}

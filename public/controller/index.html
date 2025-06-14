@@ -29,6 +29,7 @@
             text-align: center;
             position: absolute;
             top: 50%;
+            color: white;
             left: 50%;
             transform: translate(-50%, -50%);
         }
@@ -92,19 +93,36 @@
 <body style="margin: 0; background-color: rgb(46, 46, 46); overflow-y: hidden;">
   
 
-        <div class="bottom-content">
-            <button id="aeroplane" class="custom-button" style="margin-bottom: 8%;">Add Aeroplane</button>
-            <button id="right" class="custom-button" style="margin-bottom: 8%;">right</button>
+        <div class="center-content">
+            
+            <div id="poistion-airport">
+                position of airport:
+                <br/><br/><br/><br/>
+            </div>
+
+            <div id="plane">
+            </div>
+             <!-- screen number:
             <input type="text" id="screen" class="custom-button" style="margin-bottom: 8%;"/>
+            <button id="aeroplane" class="custom-button" style="margin-bottom: 8%;">Add Aeroplane</button>
+            <br/> -->
+            <br/>
+            Aeroplane direction:
+            <br/><br/><br/>
+            <button id="right" class="custom-button" style="margin-bottom: 8%;">right</button>
             <button id="left" class="custom-button" style="margin-bottom: 8%;">left</button>
-            <button id="submit" class="custom-button" style="margin-bottom: 8%;">submit</button>
-            <input type="text" id="text-i" class="custom-button" style="margin-bottom: 8%;"/>
+            <br/>
+            <!-- Aeroplane name:
+            <input type="text" id="text-i" class="custom-button" style="margin-bottom: 15%;"/>
+            <button id="submit" class="custom-button" style="margin-bottom: 8%;">submit</button> -->
         </div>
+        
+       
+
     </div>  
 
   
 </body>
-<script src="../js/nipplejs.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module" src='main.js'></script>
 
