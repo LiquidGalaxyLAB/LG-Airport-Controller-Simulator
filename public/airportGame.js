@@ -53,6 +53,8 @@ let currentMap = generateMasterMap(rows, cols); //default to master map
 
 const airplanes = [];
 
+let takeoffdata = 0;
+let frameCount = 0;
 
 // Pre-create airplane images to avoid repeated blob creation
 const airplaneImages = {
@@ -117,7 +119,7 @@ function onCreateplane(aeroplane) {
       airplanes.push({
         ...aeroplane,
         img: airplaneImages.white,
-        dx: aeroplane.dx || 0.5,
+        dx: aeroplane.dx || -0.5,
         dy: aeroplane.dy || 0,
         rotation: aeroplane.rotation !== undefined ? aeroplane.rotation : 0, 
       });
@@ -277,17 +279,52 @@ function addAeroplane(row) {
           ctx.rotate(degToRad(plane.rotation));
         }
 
+        if (plane.takeoff ) {
+          if (frameCount % 10 === 0 && takeoffdata < 50) {
+            takeoffdata += 5;
+            takeoffdata === 50 ? (plane.altitude = 1 , takeoffdata = 0 ,plane.takeoff = false ): null;
+          }
+          ctx.rotate(degToRad(takeoffdata));
+          const angleRad = degToRad(takeoffdata - 180);
+  
+          plane.dx = Math.cos(angleRad) * 0.5;
+          plane.dy = Math.sin(angleRad) * 0.5;
+        }
         
-        ctx.drawImage(plane.img, -20, -20, 40, 40); 
+        // rotation 
+        else if (frameCount % 100 === 0 && plane.rotationstack.length > 0) {
+          const command = plane.rotationstack.shift(); // remove first
+        
+          if (command === "left") {
+            plane.rotation += 45;
+          } else if (command === "right") {
+            plane.rotation -= 45;
+          }
+        
+          const angleRad = degToRad(plane.rotation - 180);
+          plane.dx = Math.cos(angleRad) * 0.5;
+          plane.dy = Math.sin(angleRad) * 0.5;
+        }
+
+        //check location 
+        const destination = plane.destation
+        if (
+          destination.label === plane.label &&
+          Math.abs(destination.x - plane.x) < 5 // allow small margin
+        ) {
+          console.log(`✔ Plane reached destination (within margin): ${plane.label}`);
+          airplanes.splice(airplanes.indexOf(plane), 1);
+        }
+        ctx.drawImage(plane.img, -20, -20); 
         ctx.restore(); 
-        
+
         ctx.save();
         ctx.translate(plane.x, plane.y);
         ctx.fillStyle = plane.selected ? "#FF0000" : "#fff";
         ctx.fillText(plane.label, -10, 40);
         ctx.restore();
       }
-
+      frameCount++;
       requestAnimationFrame(animate);
     }
     animate();
@@ -319,10 +356,10 @@ document.addEventListener("keydown", (e) => {
 
   switch (e.key) {
     case "ArrowUp":
-      airplanes[aeroplanename].dy = -1; 
+      airplanes[aeroplanename].altitude > 5001?airplanes[aeroplanename].altitude += 1000 : null; 
       break;
     case "ArrowDown":
-      airplanes[aeroplanename].dy = 1;
+      airplanes[aeroplanename].altitude < 5001?airplanes[aeroplanename].altitude -= 1000 : null; ;
       break;
     case "ArrowLeft":
       airplanes[aeroplanename].dx = -1;
@@ -330,13 +367,19 @@ document.addEventListener("keydown", (e) => {
     case "ArrowRight":
       airplanes[aeroplanename].dx = 1;
       break;
-    case "l":
-      console.log("landed");
-      airplanes[aeroplanename].altitude = 0;
-      break;
     case "t":
-    console.log("landed");
+      console.log("takeoff");
+      airplanes[aeroplanename].altitude = 0;
+      airplanes[aeroplanename].takeoff = true;
+      airplanes[aeroplanename].landoff = false;
+      break;
+    case "l":
+    console.log("landed ");
+    takeoffdata = 0;
     airplanes[aeroplanename].altitude = 1;
+    airplanes[aeroplanename].takeoff = false;
+    airplanes[aeroplanename].landoff = true;
+
     break;
     case "Escape":
       aeroplanename = null;
@@ -362,7 +405,8 @@ function handleTraverseAeroplane(plane, screenNumber) {
       });
     } else if (screenNumber == 3) {
       // right → wrap to left
-      alert("Wrong exit");
+
+        alert("Wrong exit");
     }
     airplanes.splice(airplanes.indexOf(plane), 1);
     return true;
@@ -400,13 +444,16 @@ function postionAeroplane(data) {
     y: data.y,
     label: getCharater(),
     screen: Number(data.screen),
-    dx: 0.5,
+    dx: -0.5,
     dy: 0,
     rotation: 0,
     selected: false,
-    altitude: 1,
+    altitude: data.label === 'ALT' ? 0 : 1,
     conflict: false,
-
+    takeoff: data.label === 'ALT' ? true : false,
+    landoff : false,
+    rotationstack: [],
+    destation:{ label: 'LON', x: 463, y: 299.5, screen: '3' },
   };
   if (Number(screenNumber) === Number(data.screen)) {
     socket.emit("create-aeroplane", newAeroplane);
@@ -435,14 +482,13 @@ function updatePlane(data) {
   }
 
   const rotation = airplanes[aeroplanename]?.rotation;
-  switch (data.dir) {
-    case "left":
-      airplanes[aeroplanename].rotation = rotation + 45;
-      break;
-    case "right":
-      airplanes[aeroplanename].rotation = rotation - 45;
-      break;
-  }
+switch (data.dir) {
+  case "left":
+  case "right":
+    airplanes[aeroplanename].rotationstack.push(data.dir);
+    console.log(`Pushed ${data.dir} to rotation stack`);
+    break;
+}
   
   const angleRad = degToRad(airplanes[aeroplanename].rotation - 180);
   
