@@ -178,7 +178,7 @@ function drawMap(row) {
             label: textLabels[key],
             x: x,
             y: y,
-            screen: screenNumber,
+            screen: parseInt(screenNumber),
           });
           socket.emit('airport-positions', labelPositions);
 
@@ -308,11 +308,13 @@ function addAeroplane(row) {
 
         //check location 
         const destination = plane.destation
-        if (
-          destination.label === plane.label &&
-          Math.abs(destination.x - plane.x) < 5 // allow small margin
+        if ( 
+          destination.screen === plane.screen &&
+          Math.abs(destination.x - plane.x) < 5 &&
+          Math.abs(destination.y - plane.y) < 5 
         ) {
           console.log(`✔ Plane reached destination (within margin): ${plane.label}`);
+          alert(`✔ Plane reached destination (within margin): ${plane.label}`);
           airplanes.splice(airplanes.indexOf(plane), 1);
         }
         ctx.drawImage(plane.img, -20, -20); 
@@ -453,9 +455,8 @@ function postionAeroplane(data) {
     takeoff: data.label === 'ALT' ? true : false,
     landoff : false,
     rotationstack: [],
-    destation:{ label: 'LON', x: 463, y: 299.5, screen: '3' },
-  };
-  if (Number(screenNumber) === Number(data.screen)) {
+    destation:{ label: 'LON', x: 460.5, y: 345, screen: 3 },
+  };  if (Number(screenNumber) === Number(data.screen)) {
     socket.emit("create-aeroplane", newAeroplane);
   }
   console.log("Sent create-aeroplane event:", newAeroplane);
