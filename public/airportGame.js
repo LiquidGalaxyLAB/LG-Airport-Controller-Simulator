@@ -1,12 +1,17 @@
 import {
   generateMasterMap,
   generateSlaveMapLayout2,
+  generateSlaveMapLayout2_5,
   generateSlaveMapLayout3,
+  generateSlaveMapLayout3_5,
+  generateSlaveMapLayout4_5,
+  generateSlaveMapLayout5,
   infobar,
   infobar2,
   infobar3,
   labelMap,
   LANDINGSVG,
+  RUNWAY,
   SVGSTRING,
   TOP_OFFESET,
 } from "./functions.js";
@@ -60,7 +65,8 @@ let frameCount = 0;
 const airplaneImages = {
   white: null,
   red: null,
-  takeLandOff: null
+  takeLandOff: null,
+  runway: null
 };
 
 // Create images once during initialization
@@ -69,18 +75,22 @@ function createAirplaneImages() {
   const redSVG = SVGSTRING.replace(/fill="[^"]+"/g, 'fill="red"');
   const redBlob = new Blob([redSVG], { type: "image/svg+xml;charset=utf-8" });
   const takeLandOff = new Blob([LANDINGSVG], { type: "image/svg+xml;charset=utf-8" });
+  const runway = new Blob([RUNWAY], { type: "image/svg+xml;charset=utf-8" });
    
   const whiteUrl = URL.createObjectURL(whiteBlob);
   const redUrl = URL.createObjectURL(redBlob);
   const takeLandOffUrl = URL.createObjectURL(takeLandOff);
+  const runwayUrl = URL.createObjectURL(runway);
   
   airplaneImages.white = new Image();
   airplaneImages.red = new Image();
   airplaneImages.takeLandOff = new Image();
+  airplaneImages.runway = new Image();
   
   airplaneImages.white.src = whiteUrl;
   airplaneImages.red.src = redUrl;
   airplaneImages.takeLandOff.src = takeLandOffUrl;
+  airplaneImages.runway.src = runwayUrl;
 }
 
 // Initialize images
@@ -89,12 +99,27 @@ createAirplaneImages();
 
 function screenSetup(screen) {
   nScreens = screen.nScreens;
-  currentMap =
+  console.log(screenNumber)
+  if(nScreens == 3){
+    currentMap =
     screenNumber == 1
       ? generateMasterMap(rows, cols) 
       : screenNumber == 2
       ? generateSlaveMapLayout2(rows, cols)
       : generateSlaveMapLayout3(rows, cols);
+  }
+  if(nScreens == 5){
+    currentMap =
+    screenNumber == 1
+      ? generateMasterMap(rows, cols) 
+      : screenNumber == 2
+      ? generateSlaveMapLayout4_5(rows, cols)
+      : screenNumber == 3
+      ? generateSlaveMapLayout5(rows, cols)
+      :  screenNumber == 4 
+      ? generateSlaveMapLayout2_5(rows, cols)
+      : generateSlaveMapLayout3_5(rows, cols);
+  }
 
     if(screenNumber == 1) {
       infobar(centerText)
@@ -102,10 +127,16 @@ function screenSetup(screen) {
     }
     else if(screenNumber == 2) {
       infobar2(centerText)
-      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 3) {
       infobar3(centerText)
-      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 4) {
+      infobar3(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 5) {
+      infobar3(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
 
   createGrid(currentMap);
@@ -180,14 +211,18 @@ function drawMap(row) {
             y: y,
             screen: parseInt(screenNumber),
           });
+          // (textLabels[key] === 'ALT') ? y - 25 : y,
           socket.emit('airport-positions', labelPositions);
 
         }
         ctx.font = "20px MONOSPACE";
         ctx.fontWeight = "bold";
-        ctx.fillStyle = "#e2e8f0";
+        ctx.fillStyle = "#e2e8f0";  
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        if(textLabels[key] === 'ALT') {
+          ctx.drawImage(airplaneImages.runway,  x - 60, y - 25); // 25 pixels above
+        }
         ctx.fillText(textLabels[key], x, y);
       } else {
         // Draw dot normally
@@ -207,7 +242,7 @@ function drawMap(row) {
 }
 
 
-const characters = "abcdefghijklmnopqrstuvwxyz";
+let characters = 65;
 let previousConflicts = new Set(); // Track plane pairs that were already alerted
 
 
@@ -265,13 +300,26 @@ function addAeroplane(row) {
         plane.x += plane.dx;
         plane.y += plane.dy;
 
-        const transferred = handleTraverseAeroplane(plane, screenNumber);
+        let  transferred;
+        if(nScreens == 3){
+          transferred = handleTraverseAeroplane(plane, screenNumber);
+        }
+        else{
+          transferred = handleTraverseAeroplane5(plane,screenNumber);
+        }
         if (transferred) continue;
   // Set image color based on conflict status
-        plane.img = plane.conflict ? airplaneImages.red : airplaneImages.white;
+        // plane.img = plane.conflict ? ctx.drawImage(airplaneImages.red,-20,-20) : airplaneImages.white;
 
-        plane.img = plane.altitude === 0 ? airplaneImages.takeLandOff : airplaneImages.white;
+        // plane.img = plane.altitude === 0 ? airplaneImages.takeLandOff : airplaneImages.white;
 
+        if (plane.conflict) {
+          plane.img = airplaneImages.red;
+        } else if (plane.altitude === 0) {
+          plane.img = airplaneImages.takeLandOff;
+        } else {
+          plane.img = airplaneImages.white;
+        }
         ctx.save();
         ctx.translate(plane.x, plane.y);
         
@@ -333,18 +381,16 @@ function addAeroplane(row) {
   };
 
 let aeroplanename = null;
-function getCharater() {
-  const randomInd = Math.floor(Math.random() * characters.length);
-  const character = characters[randomInd];
-  const ischarater = airplanes.some(
-    (plane) => plane.label === characters.charAt(randomInd)
-  );
-  if (ischarater) {
-    return (
-      character + characters[Math.floor(Math.random() * characters.length)]
-    );
-  }
-  return character;
+function getCharater(data) {
+   let name = String.fromCharCode(characters);
+   characters++;
+   name += data.source.label
+   name += data.destation.label
+  return name; 
+
+  // const randomInd = Math.floor(Math.random() * characters.length);
+  // const character = characters[randomInd];
+  // return character;
 }
 
 document.addEventListener("keydown", (e) => {
@@ -419,7 +465,7 @@ function handleTraverseAeroplane(plane, screenNumber) {
       // middle → left
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: canvas.width,
+        x: -2,
         screen: 2,
       });
     } else if (screenNumber == 2) {
@@ -440,12 +486,95 @@ function handleTraverseAeroplane(plane, screenNumber) {
   return false;
 }
 
+
+
+function handleTraverseAeroplane5(plane, screenNumber) {
+  if (plane.x > canvas.width) {
+    if (screenNumber == 1) {
+      // middle → right
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 3,
+      });
+    } else if (screenNumber == 2) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 1,
+      });
+    } else if (screenNumber == 4) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 2,
+      });
+    }else if (screenNumber == 3) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 5,
+      });
+    } else if (screenNumber == 5) {
+      // right → wrap to left
+
+        alert("Wrong exit");
+    }
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  if (plane.x < 0) {
+    if (screenNumber == 1) {
+      // middle → left
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -2,
+        screen: 2,
+      });
+    }else if (screenNumber == 2) {
+      // right → 1
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -4,
+        screen: 4,
+      });
+    } else if (screenNumber == 4) {
+      confirm("Wrong exit");
+      // left → wrap to right
+    } else if (screenNumber == 3) {
+      // right → 1
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -3,
+        screen: 1,
+      });
+    }
+    else if (screenNumber == 5) {
+      // right → 3
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -5,
+        screen: 3,
+      });}
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  return false;
+}
+
+
+
 function postionAeroplane(data) {
   const newAeroplane = {
     x: data.x,
     y: data.y,
-    label: getCharater(),
-    screen: Number(data.screen),
+    label: getCharater(data),
+    screen: Number(data.source.screen) || 1,
     dx: -0.5,
     dy: 0,
     rotation: 0,
@@ -455,8 +584,9 @@ function postionAeroplane(data) {
     takeoff: data.label === 'ALT' ? true : false,
     landoff : false,
     rotationstack: [],
-    destation:{ label: 'LON', x: 460.5, y: 345, screen: 3 },
-  };  if (Number(screenNumber) === Number(data.screen)) {
+    destation: data.destation || {label: 'WSH', x: 358.5, y: 26.5, screen: 2},
+    source: data.source || {label: 'ALT', x: 293.5, y: 341.5, screen: 1}
+  };  if (Number(screenNumber) === Number(data.source.screen)) {
     socket.emit("create-aeroplane", newAeroplane);
   }
   console.log("Sent create-aeroplane event:", newAeroplane);
@@ -499,14 +629,33 @@ switch (data.dir) {
 socket.on("update-plane", updatePlane);
 
 function selectPlane(data) {
+//  
   console.log(data);
   airplanes.forEach((plane) => (plane.selected = false));
   const index = airplanes.findIndex((plane) => plane.label === data.dir);
   if (index !== -1) {
     aeroplanename = index;
+
+    socket.emit("update-origin-destination", {
+      origin:  airplanes[aeroplanename].source.label,
+      destination:  airplanes[aeroplanename].destation.label,
+      screen: "2",
+    });
+
     airplanes[aeroplanename].selected = true;
+
     console.log(`Selected plane: ${airplanes[aeroplanename].label}`);
   }
   return;
 }
 socket.on("select-aeroplane", selectPlane);
+
+
+socket.on("update-origin-destination", (data) => {
+  console.log(data);
+  if (data.screen !== screenNumber) {
+    return;
+  }
+  document.getElementById("origin").textContent = data.origin;
+  document.getElementById("destination").textContent = data.destination;
+});
