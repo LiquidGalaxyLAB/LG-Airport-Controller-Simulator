@@ -1,12 +1,17 @@
 import {
   generateMasterMap,
   generateSlaveMapLayout2,
+  generateSlaveMapLayout2_5,
   generateSlaveMapLayout3,
+  generateSlaveMapLayout3_5,
+  generateSlaveMapLayout4_5,
+  generateSlaveMapLayout5,
   infobar,
   infobar2,
   infobar3,
   labelMap,
   LANDINGSVG,
+  RUNWAY,
   SVGSTRING,
   TOP_OFFESET,
 } from "./functions.js";
@@ -53,12 +58,15 @@ let currentMap = generateMasterMap(rows, cols); //default to master map
 
 const airplanes = [];
 
+let takeoffdata = 0;
+let frameCount = 0;
 
 // Pre-create airplane images to avoid repeated blob creation
 const airplaneImages = {
   white: null,
   red: null,
-  takeLandOff: null
+  takeLandOff: null,
+  runway: null
 };
 
 // Create images once during initialization
@@ -67,18 +75,22 @@ function createAirplaneImages() {
   const redSVG = SVGSTRING.replace(/fill="[^"]+"/g, 'fill="red"');
   const redBlob = new Blob([redSVG], { type: "image/svg+xml;charset=utf-8" });
   const takeLandOff = new Blob([LANDINGSVG], { type: "image/svg+xml;charset=utf-8" });
+  const runway = new Blob([RUNWAY], { type: "image/svg+xml;charset=utf-8" });
    
   const whiteUrl = URL.createObjectURL(whiteBlob);
   const redUrl = URL.createObjectURL(redBlob);
   const takeLandOffUrl = URL.createObjectURL(takeLandOff);
+  const runwayUrl = URL.createObjectURL(runway);
   
   airplaneImages.white = new Image();
   airplaneImages.red = new Image();
   airplaneImages.takeLandOff = new Image();
+  airplaneImages.runway = new Image();
   
   airplaneImages.white.src = whiteUrl;
   airplaneImages.red.src = redUrl;
   airplaneImages.takeLandOff.src = takeLandOffUrl;
+  airplaneImages.runway.src = runwayUrl;
 }
 
 // Initialize images
@@ -87,23 +99,44 @@ createAirplaneImages();
 
 function screenSetup(screen) {
   nScreens = screen.nScreens;
-  currentMap =
+  console.log(screenNumber)
+  if(nScreens == 3){
+    currentMap =
     screenNumber == 1
       ? generateMasterMap(rows, cols) 
       : screenNumber == 2
       ? generateSlaveMapLayout2(rows, cols)
       : generateSlaveMapLayout3(rows, cols);
+  }
+  if(nScreens == 5){
+    currentMap =
+    screenNumber == 1
+      ? generateMasterMap(rows, cols) 
+      : screenNumber == 2
+      ? generateSlaveMapLayout4_5(rows, cols)
+      : screenNumber == 3
+      ? generateSlaveMapLayout3_5(rows, cols)
+      :  screenNumber == 4 
+      ? generateSlaveMapLayout2_5(rows, cols)
+      : generateSlaveMapLayout5(rows, cols);
+  }
 
     if(screenNumber == 1) {
       infobar(centerText)
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
     else if(screenNumber == 2) {
-      infobar2(centerText)
-      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
-    }else if(screenNumber == 3) {
-      infobar3(centerText)
-      // socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+      if(nScreens == 3) infobar2(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 3 ) {
+      if(nScreens == 3) infobar3(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 4 ) {
+      if(nScreens == 5) infobar2(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
+    }else if(screenNumber == 5 ) {
+      if(nScreens == 5) infobar3(centerText)
+      socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
 
   createGrid(currentMap);
@@ -117,7 +150,7 @@ function onCreateplane(aeroplane) {
       airplanes.push({
         ...aeroplane,
         img: airplaneImages.white,
-        dx: aeroplane.dx || 0.5,
+        dx: aeroplane.dx || -0.5,
         dy: aeroplane.dy || 0,
         rotation: aeroplane.rotation !== undefined ? aeroplane.rotation : 0, 
       });
@@ -176,16 +209,20 @@ function drawMap(row) {
             label: textLabels[key],
             x: x,
             y: y,
-            screen: screenNumber,
+            screen: parseInt(screenNumber),
           });
+          // (textLabels[key] === 'ALT') ? y - 25 : y,
           socket.emit('airport-positions', labelPositions);
 
         }
         ctx.font = "20px MONOSPACE";
         ctx.fontWeight = "bold";
-        ctx.fillStyle = "#e2e8f0";
+        ctx.fillStyle = "#e2e8f0";  
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        if(textLabels[key] === 'ALT') {
+          ctx.drawImage(airplaneImages.runway,  x - 60, y - 25); // 25 pixels above
+        }
         ctx.fillText(textLabels[key], x, y);
       } else {
         // Draw dot normally
@@ -205,7 +242,7 @@ function drawMap(row) {
 }
 
 
-const characters = "abcdefghijklmnopqrstuvwxyz";
+let characters = 65;
 let previousConflicts = new Set(); // Track plane pairs that were already alerted
 
 
@@ -242,7 +279,10 @@ function addAeroplane(row) {
     
             // Alert if this conflict is new
             if (!previousConflicts.has(pairKey)) {
-              alert(`⚠️ Conflict detected between planes ${a.label} and ${b.label}`);
+              socket.emit("error-popup", {
+                error: 'Conflict'
+              });
+              // alert(`⚠️ Conflict detected between planes ${a.label} and ${b.label}`);
               previousConflicts.add(pairKey);
             }
     
@@ -255,6 +295,9 @@ function addAeroplane(row) {
       for (const pairKey of [...previousConflicts]) {
         if (!newConflicts.has(pairKey)) {
           previousConflicts.delete(pairKey);
+          socket.emit("error-popup", {
+            error: ''
+          });
         }
       }
       
@@ -263,86 +306,153 @@ function addAeroplane(row) {
         plane.x += plane.dx;
         plane.y += plane.dy;
 
-        const transferred = handleTraverseAeroplane(plane, screenNumber);
+        let  transferred;
+        if(nScreens == 3){
+          transferred = handleTraverseAeroplane(plane, screenNumber);
+        }
+        else{
+          transferred = handleTraverseAeroplane5(plane,screenNumber);
+        }
         if (transferred) continue;
   // Set image color based on conflict status
-        plane.img = plane.conflict ? airplaneImages.red : airplaneImages.white;
+        // plane.img = plane.conflict ? ctx.drawImage(airplaneImages.red,-20,-20) : airplaneImages.white;
 
-        plane.img = plane.altitude === 0 ? airplaneImages.takeLandOff : airplaneImages.white;
+        // plane.img = plane.altitude === 0 ? airplaneImages.takeLandOff : airplaneImages.white;
 
+        if (plane.conflict) {
+          plane.img = airplaneImages.red;
+        } else if (plane.altitude === 0) {
+          plane.img = airplaneImages.takeLandOff;
+        } else {
+          plane.img = airplaneImages.white;
+        }
         ctx.save();
         ctx.translate(plane.x, plane.y);
-        
-        if (plane.rotation !== undefined && plane.selected) {
+
+        if (plane.selected && plane.rotationstackPreview.length > 0) {
+          // Apply preview of future rotation
+          let tempRotation = plane.rotation;
+          for (const cmd of plane.rotationstackPreview) {
+            if (cmd === "left") tempRotation += 45;
+            else if (cmd === "right") tempRotation -= 45;
+          }
+          ctx.rotate(degToRad(tempRotation));
+        } else {
           ctx.rotate(degToRad(plane.rotation));
         }
 
+        if (plane.takeoff ) {
+          if (frameCount % 10 === 0 && takeoffdata < 50) {
+            takeoffdata += 5;
+            takeoffdata === 50 ? (plane.altitude = 1000 , takeoffdata = 0 ,plane.takeoff = false ): null;
+          }
+          ctx.rotate(degToRad(takeoffdata));
+          const angleRad = degToRad(takeoffdata - 180);
+  
+          plane.dx = Math.cos(angleRad) * 0.5;
+          plane.dy = Math.sin(angleRad) * 0.5;
+        }
         
-        ctx.drawImage(plane.img, -20, -20, 40, 40); 
+        // rotation 
+        else if (frameCount % 100 === 0 && plane.rotationstack.length > 0 && !plane.selected ) {
+          const command = plane.rotationstack.shift(); // remove first
+        
+          if (command === "left") {
+            plane.rotation += 45;
+          } else if (command === "right") {
+            plane.rotation -= 45;
+          }
+        
+          const angleRad = degToRad(plane.rotation - 180);
+          plane.dx = Math.cos(angleRad) * 0.5;
+          plane.dy = Math.sin(angleRad) * 0.5;
+        }
+
+        //check location 
+        const destination = plane.destation
+        if ( 
+          destination.screen === plane.screen &&
+          Math.abs(destination.x - plane.x) < 10 &&
+          Math.abs(destination.y - plane.y) < 10 
+        ) {
+          console.log(`✔ Plane reached destination (within margin): ${plane.label}`);
+          alert(`✔ Plane reached destination (within margin): ${plane.label}`);
+          airplanes.splice(airplanes.indexOf(plane), 1);
+        }
+        ctx.drawImage(plane.img, -20, -20); 
         ctx.restore(); 
-        
+
         ctx.save();
         ctx.translate(plane.x, plane.y);
         ctx.fillStyle = plane.selected ? "#FF0000" : "#fff";
         ctx.fillText(plane.label, -10, 40);
         ctx.restore();
       }
-
+      frameCount++;
       requestAnimationFrame(animate);
     }
     animate();
   };
 
 let aeroplanename = null;
-function getCharater() {
-  const randomInd = Math.floor(Math.random() * characters.length);
-  const character = characters[randomInd];
-  const ischarater = airplanes.some(
-    (plane) => plane.label === characters.charAt(randomInd)
-  );
-  if (ischarater) {
-    return (
-      character + characters[Math.floor(Math.random() * characters.length)]
-    );
-  }
-  return character;
+function getCharater(data) {
+   let name = String.fromCharCode(characters);
+   characters++;
+   name += data.source.label.charAt(0);
+   name += data.destation.label.charAt(0);
+  return name; 
+
+  // const randomInd = Math.floor(Math.random() * characters.length);
+  // const character = characters[randomInd];
+  // return character;
 }
 
-document.addEventListener("keydown", (e) => {
-  console.log("Pressed:", e.key);
+// document.addEventListener("keydown", (e) => {
+
+//   switch (e.key) {
+//     case "ArrowUp":
+
+//   }
+//   console.log("Pressed:", e.key);
 
  
 
-  if (aeroplanename === null) {
-    return;
-  }
+//   if (aeroplanename === null) {
+//     return;
+//   }
 
-  switch (e.key) {
-    case "ArrowUp":
-      airplanes[aeroplanename].dy = -1; 
-      break;
-    case "ArrowDown":
-      airplanes[aeroplanename].dy = 1;
-      break;
-    case "ArrowLeft":
-      airplanes[aeroplanename].dx = -1;
-      break;
-    case "ArrowRight":
-      airplanes[aeroplanename].dx = 1;
-      break;
-    case "l":
-      console.log("landed");
-      airplanes[aeroplanename].altitude = 0;
-      break;
-    case "t":
-    console.log("landed");
-    airplanes[aeroplanename].altitude = 1;
-    break;
-    case "Escape":
-      aeroplanename = null;
-      break;
-  }
-});
+//   switch (e.key) {
+//     case "ArrowUp":
+//       airplanes[aeroplanename].altitude > 5001?airplanes[aeroplanename].altitude += 1000 : null; 
+//       break;
+//     case "ArrowDown":
+//       airplanes[aeroplanename].altitude < 5001?airplanes[aeroplanename].altitude -= 1000 : null; ;
+//       break;
+//     case "ArrowLeft":
+//       airplanes[aeroplanename].dx = -1;
+//       break;
+//     case "ArrowRight":
+//       airplanes[aeroplanename].dx = 1;
+//       break;
+//     case "t":
+//       console.log("takeoff");
+//       airplanes[aeroplanename].altitude = 0;
+//       airplanes[aeroplanename].takeoff = true;
+//       airplanes[aeroplanename].landoff = false;
+//       break;
+//     case "l":
+//     console.log("landed ");
+//     takeoffdata = 0;
+//     airplanes[aeroplanename].altitude = 1;
+//     airplanes[aeroplanename].takeoff = false;
+//     airplanes[aeroplanename].landoff = true;
+
+//     break;
+//     case "Escape":
+//       aeroplanename = null;
+//       break;
+//   }
+// });
 
 function handleTraverseAeroplane(plane, screenNumber) {
   if (plane.x > canvas.width) {
@@ -362,7 +472,10 @@ function handleTraverseAeroplane(plane, screenNumber) {
       });
     } else if (screenNumber == 3) {
       // right → wrap to left
-      alert("Wrong exit");
+      socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
+        // alert("Wrong exit");
     }
     airplanes.splice(airplanes.indexOf(plane), 1);
     return true;
@@ -373,12 +486,14 @@ function handleTraverseAeroplane(plane, screenNumber) {
       // middle → left
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: canvas.width,
+        x: -2,
         screen: 2,
       });
     } else if (screenNumber == 2) {
-      confirm("Wrong exit");
       // left → wrap to right
+          socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
     } else if (screenNumber == 3) {
       // right → middle
       socket.emit("transfer-aeroplane", {
@@ -390,25 +505,147 @@ function handleTraverseAeroplane(plane, screenNumber) {
     airplanes.splice(airplanes.indexOf(plane), 1);
     return true;
   }
+  if (plane.y > canvas.height) {
+    socket.emit("error-popup", {
+      error: "Wrong exit",
+    });
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  if (plane.y < 0) {
+    socket.emit("error-popup", {
+      error: "Wrong exit",
+    });
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
 
   return false;
 }
+
+
+
+function handleTraverseAeroplane5(plane, screenNumber) {
+  if (plane.x > canvas.width) {
+    if (screenNumber == 1) {
+      // middle → right
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 3,
+      });
+    } else if (screenNumber == 2) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 1,
+      });
+    } else if (screenNumber == 4) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 2,
+      });
+    }else if (screenNumber == 3) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 5,
+      });
+    } else if (screenNumber == 5) {
+      // right → wrap to left
+      socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
+        // alert("Wrong exit");
+    }
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  if (plane.x < 0) {
+    if (screenNumber == 1) {
+      // middle → left
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -2,
+        screen: 2,
+      });
+    }else if (screenNumber == 2) {
+      // right → 1
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -4,
+        screen: 4,
+      });
+    } else if (screenNumber == 4) {
+      socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
+      // confirm("Wrong exit");
+      // left → wrap to right
+    } else if (screenNumber == 3) {
+      // right → 1
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -3,
+        screen: 1,
+      });
+    }
+    else if (screenNumber == 5) {
+      // right → 3
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: -5,
+        screen: 3,
+      });}
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+  if (plane.y > canvas.height) {
+    socket.emit("error-popup", {
+      error: "Wrong exit",
+    });
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  if (plane.y < 0) {
+    socket.emit("error-popup", {
+      error: "Wrong exit",
+    });
+    airplanes.splice(airplanes.indexOf(plane), 1);
+    return true;
+  }
+
+  return false;
+}
+
+
 
 function postionAeroplane(data) {
   const newAeroplane = {
     x: data.x,
     y: data.y,
-    label: getCharater(),
-    screen: Number(data.screen),
-    dx: 0.5,
+    label: getCharater(data),
+    screen: Number(data.source.screen) || 1,
+    dx: -0.5,
     dy: 0,
     rotation: 0,
     selected: false,
-    altitude: 1,
+    altitude: data.label === 'ALT' ? 0 : 1000,
     conflict: false,
-
-  };
-  if (Number(screenNumber) === Number(data.screen)) {
+    takeoff: data.label === 'ALT' ? true : false,
+    landoff : false,
+    rotationstack: [],
+    rotationstackPreview: [],
+    destation: data.destation || {label: 'WSH', x: 358.5, y: 26.5, screen: 2},
+    source: data.source || {label: 'ALT', x: 293.5, y: 341.5, screen: 1}
+  };  if (Number(screenNumber) === Number(data.source.screen)) {
     socket.emit("create-aeroplane", newAeroplane);
   }
   console.log("Sent create-aeroplane event:", newAeroplane);
@@ -422,44 +659,114 @@ const degToRad = deg => (deg * Math.PI) / 180;
 socket.on("add-aeroplane", postionAeroplane);
 
 function updatePlane(data) {
-  console.log(data);
+  const plane = airplanes.find((p) => p.selected === true); 
+  if (!plane) return;
 
-  const index = airplanes.findIndex((plane) => plane.selected === true);
-  if (index !== -1) {
-    aeroplanename = index;
-    console.log(`Selected plane: ${airplanes[aeroplanename].label}`);
-  }
+  aeroplanename = plane.label;
 
-  if (aeroplanename === null) {
-    return;
-  }
-
-  const rotation = airplanes[aeroplanename]?.rotation;
-  switch (data.dir) {
-    case "left":
-      airplanes[aeroplanename].rotation = rotation + 45;
-      break;
-    case "right":
-      airplanes[aeroplanename].rotation = rotation - 45;
-      break;
+  if (data.dir === "left" || data.dir === "right") {
+    const lastRotation = plane.rotationstackPreview[plane.rotationstackPreview.length - 1];
+  
+    if (
+      (data.dir === "left" && lastRotation === "right") ||
+      (data.dir === "right" && lastRotation === "left")
+    ) {
+      plane.rotationstackPreview.pop();
+    } else {
+      // Otherwise, push it
+      plane.rotationstackPreview.push(data.dir);
+    }
+  
+   
   }
   
-  const angleRad = degToRad(airplanes[aeroplanename].rotation - 180);
-  
-  airplanes[aeroplanename].dx = Math.cos(angleRad) * 0.5;
-  airplanes[aeroplanename].dy = Math.sin(angleRad) * 0.5;
+  const angleRad = degToRad(plane.rotation - 180);
+  plane.dx = Math.cos(angleRad) * 0.5;
+  plane.dy = Math.sin(angleRad) * 0.5;
+
+  plane.altitude = data.altitude;
 }
 socket.on("update-plane", updatePlane);
 
 function selectPlane(data) {
-  console.log(data);
   airplanes.forEach((plane) => (plane.selected = false));
-  const index = airplanes.findIndex((plane) => plane.label === data.dir);
-  if (index !== -1) {
-    aeroplanename = index;
-    airplanes[aeroplanename].selected = true;
-    console.log(`Selected plane: ${airplanes[aeroplanename].label}`);
+  const plane = airplanes.find((plane) => plane.label === data.dir);
+  if (plane) {
+    aeroplanename = plane.label;
+
+    socket.emit("update-origin-destination", {
+      origin: plane.source.label,
+      destination: plane.destation.label,
+      screen: nScreens == 3 ? '2' : '4',
+    });
+ 
+    plane.altitude = data.altitude;
+
+    socket.emit("update-heading-altitude", {
+      heading: "25",
+      altitude : plane.altitude,
+      screen: nScreens == 3 ? '3' : '5',
+
+    })
+    plane.selected = true;
+    console.log(`Selected plane: ${plane.label}`);
   }
-  return;
 }
 socket.on("select-aeroplane", selectPlane);
+
+
+socket.on("update-origin-destination", (data) => {
+  console.log(data);
+  if (data.screen !== screenNumber) {
+    return;
+  }
+  document.getElementById("origin").textContent = data.origin;
+  document.getElementById("destination").textContent = data.destination;
+});
+
+socket.on("update-heading-altitude", (data) => {
+  console.log(data);
+  if (data.screen !== screenNumber) {
+    return;
+  }
+  document.getElementById("headingData").textContent = data.heading;
+  document.getElementById("altitudeData").textContent = data.altitude;
+});
+
+let errorTimeout; 
+socket.on("error-popup", (data) => {
+  console.log(data);
+  if (data.screen !== 1) {
+      document.getElementById("error").textContent = data.error;
+      if (errorTimeout) {
+        clearTimeout(errorTimeout);
+      }
+      errorTimeout = setTimeout(() => {
+        errorEl.textContent = "";
+        errorTimeout = null; // Reset reference
+      }, 5000);
+    return;
+  }
+})
+
+
+function submitPlane(data) {
+  const plane = airplanes.find((plane) => plane.label === data.dir);
+  if (plane) {
+    plane.rotationstack.push(...plane.rotationstackPreview);
+    plane.rotationstackPreview = [];
+    plane.altitude = data.altitude;
+    plane.selected = false;
+    
+    
+    socket.emit("update-heading-altitude", {
+      heading: "25",
+      altitude : plane.altitude,
+      screen: nScreens == 3 ? '3' : '5',
+
+    })
+    console.log(`submited plane : ${plane.label}`);
+  }
+}
+socket.on("submit-aeroplane", submitPlane);
+

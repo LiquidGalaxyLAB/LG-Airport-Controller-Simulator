@@ -70,22 +70,55 @@ app.get("/:id", (req, res) => {
   // Handle transfer between screens
   socket.on("transfer-aeroplane", (planeData) => {
     // const width  = allscreenwidth.findIndex((existing) => existing.screen === planeData.screen);
+    // -4<-2<-1<-3<-5
+
     if(planeData.x === -3){
-      planeData.x = allscreenwidth[0].width;
+      const screenEntry = allscreenwidth.find(obj => obj[1]);
+      if (screenEntry) {
+        planeData.x = screenEntry[1].data.width;
+      }
     }
+    if(planeData.x === -2){
+      const screenEntry = allscreenwidth.find(obj => obj[2]);
+      if (screenEntry) {
+        planeData.x = screenEntry[2].data.width;
+      }
+    }
+    if(planeData.x === -4){
+      const screenEntry = allscreenwidth.find(obj => obj[4]);
+      if (screenEntry) {
+        planeData.x = screenEntry[4].data.width;
+      }
+    }
+    if(planeData.x === -5){
+      const screenEntry = allscreenwidth.find(obj => obj[3]);
+      if (screenEntry) {
+        planeData.x = screenEntry[3].data.width;
+      }
+    }
+  
+    if(planeData.x === -4){
+      const screenEntry = allscreenwidth.find(obj => obj[4]);
+      if (screenEntry) {
+        planeData.x = screenEntry[4].data.width;
+      }
+    }
+  
         console.log("Transferring aeroplane to screen", planeData.screen);
         io.emit("aeroplane-create", planeData);
   });
 
 
     socket.on("add-plane", (data)=>{
+      data.destation = allpostionAirpots[3];
+      data.source = allpostionAirpots.find(airport => airport.label === "ALT");
       io.emit("add-aeroplane", data);
       console.log("Adding aeroplane" , data);
     });
 
 
     function updateDirectionLeft() {
-        io.emit("update-plane", { dir: "left" });
+        io.emit("update-plane", { dir: "left"  });
         console.log("Adding aeroplane left");
     }
     
@@ -104,11 +137,20 @@ socket.on('select-plane', (key) => {
     console.log('Selecting plane', key);
 });
 
+socket.on('submit-plane', (key) => {
+  io.emit('submit-aeroplane', { dir: key.label ,altitude: key.altitude  });
+  console.log('Selecting plane', key);
+});
+
+
 socket.on('airport-positions', (data) => {
   console.log('====================================');
   console.log('Received updated airport positions ckient:', data);
   console.log('====================================');
   data.forEach((incoming) => {
+    if(incoming.label === 'ALT') {
+      incoming.y -= 20
+    };
     const index = allpostionAirpots.findIndex((existing) => existing.label === incoming.label);
   
     if (index !== -1) {
@@ -143,17 +185,33 @@ socket.on('get-aeroplane', (data) => {
     
   socket.on('postwidth', (data) => {
     console.log('Received updated airport width from server:', data);
-    const index = allscreenwidth.findIndex((existing) => existing.screen === data.screen);
+    const index = allscreenwidth.findIndex(
+      (existing) => Object.keys(existing)[0] === String(data.screen)
+    );
     if(index !== -1){
-      allscreenwidth[index] = data;
+      allscreenwidth[index] = {[data.screen]:{data}};
     }
     else{
-     allscreenwidth.push(data);}
+     allscreenwidth.push({[data.screen]:{data}})};
   })
+
+  console.log("screen all",allscreenwidth);
 
   socket.on('get-screen-width', (callback) => {
     callback(allscreenwidth); 
   });
+
+  socket.on('update-origin-destination', (data) => {
+    io.emit('update-origin-destination', data); 
+  });
+
+  
+  socket.on('update-heading-altitude', (data) => {
+    io.emit('update-heading-altitude', data); 
+  });
+  socket.on('error-popup', (data) => {
+    io.emit('error-popup', data);
+  })
 
     function sleep(duration) {
     return new Promise((resolve) => setTimeout(resolve, duration));
@@ -161,6 +219,27 @@ socket.on('get-aeroplane', (data) => {
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
+
+
+// setInterval(() => {
+//   let sourcedata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)]
+//   let destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)]
+
+//   if(sourcedata?.label === destationdata?.label){
+//      destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)]
+//   }
+// const data ={
+//   x: sourcedata.x,
+//   y: sourcedata.y,
+//   screen: sourcedata.screen,
+//   destation :destationdata,
+//   source :sourcedata,
+// }
+// console.log("interval" , data)
+//   io.emit('add-aeroplane', data);
+// },70000);
+
+
 });
 
 http.listen(port, "0.0.0.0", () => {
