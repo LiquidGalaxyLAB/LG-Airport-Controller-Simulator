@@ -267,8 +267,14 @@ export function infobar (container){
   command.id = "command";
   command.textContent = "DL146 TURN RIGHT HEADING 230 AT 4000 FEET"
 
+
+  const error = document.createElement("div");
+  error.id = "error";
+  error.className = "errorData";
+  error.textContent = "";
   container.appendChild(time);
   container.appendChild(command);
+  container.appendChild(error);
   updateTimer(); 
 }
 

@@ -110,15 +110,15 @@ app.get("/:id", (req, res) => {
 
 
     socket.on("add-plane", (data)=>{
-      data.destation = {label: 'WSH', x: 358.5, y: 26.5, screen: 2};
-      data.source = {label: 'ALT', x: 293.5, y: 341.5, screen: 1};
+      data.destation = allpostionAirpots[3];
+      data.source = allpostionAirpots.find(airport => airport.label === "ALT");
       io.emit("add-aeroplane", data);
       console.log("Adding aeroplane" , data);
     });
 
 
     function updateDirectionLeft() {
-        io.emit("update-plane", { dir: "left" });
+        io.emit("update-plane", { dir: "left"  });
         console.log("Adding aeroplane left");
     }
     
@@ -137,11 +137,20 @@ socket.on('select-plane', (key) => {
     console.log('Selecting plane', key);
 });
 
+socket.on('submit-plane', (key) => {
+  io.emit('submit-aeroplane', { dir: key.label ,altitude: key.altitude  });
+  console.log('Selecting plane', key);
+});
+
+
 socket.on('airport-positions', (data) => {
   console.log('====================================');
   console.log('Received updated airport positions ckient:', data);
   console.log('====================================');
   data.forEach((incoming) => {
+    if(incoming.label === 'ALT') {
+      incoming.y -= 20
+    };
     const index = allpostionAirpots.findIndex((existing) => existing.label === incoming.label);
   
     if (index !== -1) {
@@ -186,13 +195,23 @@ socket.on('get-aeroplane', (data) => {
      allscreenwidth.push({[data.screen]:{data}})};
   })
 
+  console.log("screen all",allscreenwidth);
+
   socket.on('get-screen-width', (callback) => {
     callback(allscreenwidth); 
   });
 
   socket.on('update-origin-destination', (data) => {
-    io.emit('update-origin-destination', data); // you can rename this
+    io.emit('update-origin-destination', data); 
   });
+
+  
+  socket.on('update-heading-altitude', (data) => {
+    io.emit('update-heading-altitude', data); 
+  });
+  socket.on('error-popup', (data) => {
+    io.emit('error-popup', data);
+  })
 
     function sleep(duration) {
     return new Promise((resolve) => setTimeout(resolve, duration));
@@ -202,7 +221,7 @@ socket.on('get-aeroplane', (data) => {
   });
 
 
-// setTimeout(() => {
+// setInterval(() => {
 //   let sourcedata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)]
 //   let destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)]
 
@@ -218,7 +237,7 @@ socket.on('get-aeroplane', (data) => {
 // }
 // console.log("interval" , data)
 //   io.emit('add-aeroplane', data);
-// },50000);
+// },70000);
 
 
 });
