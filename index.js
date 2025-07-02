@@ -28,7 +28,7 @@ if (myArgs.length == 0 || isNaN(nScreens)) {
   nScreens = 5;
 }
 console.log(
-  `Running Galaxy Pacman for Liquid Galaxy with ${nScreens} screens!`
+  `Running LG AIRPORT SIMULATOR for Liquid Galaxy with ${nScreens} screens!`
 );
 
 app.use(express.static(__dirname + filePath));
@@ -110,8 +110,8 @@ app.get("/:id", (req, res) => {
 
 
     socket.on("add-plane", (data)=>{
-      data.destation = allpostionAirpots[3];
-      data.source = allpostionAirpots.find(airport => airport.label === "ALT");
+      data.destation = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
+      data.source = allpostionAirpots.find(airport => airport.label === data.label);
       io.emit("add-aeroplane", data);
       console.log("Adding aeroplane" , data);
     });
@@ -130,9 +130,12 @@ app.get("/:id", (req, res) => {
     socket.on("update-plane-left", updateDirectionLeft);
     socket.on("update-plane-right", updateDirectionRight);
     
- 
-    // Server
-socket.on('select-plane', (key) => {
+    socket.on("send-command", (data) => {
+        io.emit("command-plane", data);
+        console.log("Sending command to plane", data);
+    });
+
+  socket.on('select-plane', (key) => {
     io.emit('select-aeroplane', { dir: key });
     console.log('Selecting plane', key);
 });

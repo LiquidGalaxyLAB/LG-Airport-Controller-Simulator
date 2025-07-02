@@ -53,7 +53,8 @@ socket.on('all-airport-positions', (data) => {
       button.textContent = airport.label;
       button.addEventListener("click", () => {
         submitdata = airport;
-        changeAltitude = airport.altitude
+        changeAltitude = airport.altitude;
+        degrees = airport.heading;
         socket.emit('select-plane', airport.label);
       });
   
@@ -78,113 +79,119 @@ function aeroplaneviaSocket(airport) {
 // aeroplaneviaSocket1.addEventListener('click', aeroplaneviaSocket);
 
 
+let previousAltitude;
 
+// LEFT turn logic
 function fleft() {
-  if (degrees === 0){
-     return
-   }else{
-    degrees -= 45
-    
-  }
-  updateAndSpeakCommandIfChanged(); 
-    socket.emit('update-plane-left');
-    console.log('dorection left ');
+  if (degrees === -405) return;
+  degrees -= 45;
+  handleCommandPreview();
+  socket.emit('update-plane-left');
+  console.log('direction: LEFT');
 }
-
 left.addEventListener('click', fleft);
 
-
-
+// RIGHT turn logic
 function fright() {
- if (degrees === 360){
-     return
-   }
-   else{
-    degrees += 45
-    
-  }
-  updateAndSpeakCommandIfChanged();
-
-    socket.emit('update-plane-right');
-    console.log('dorection right  ');;
+  if (degrees === 405) return;
+  degrees += 45;
+  handleCommandPreview();
+  socket.emit('update-plane-right');
+  console.log('direction: RIGHT');
 }
-
 right.addEventListener('click', fright);
 
-let previousAltitude ;
-submit.addEventListener('click', (event) => {
-  previousAltitude = submitdata.altitude;
-  if(submitdata.altitude === 0 && submitdata.takeoff === true){
-      submitdata.altitude = 1000;
-    }else{
-      submitdata.altitude =changeAltitude
-    }
-
-    const command = generateCommandSpeech();
-    console.log(command);
-    speakCommand(command);
-
-    console.log('submited selected:', submitdata);
-    socket.emit('submit-plane', submitdata);
+// Altitude increase
+plus.addEventListener("click", () => {
+  if (changeAltitude === 5000) return;
+  changeAltitude += 1000;
+  handleCommandPreview();
 });
 
-plus.addEventListener("click", (event) => {
-  if(changeAltitude === 5000){
-  return}
-  changeAltitude +=1000;
-  updateAndSpeakCommandIfChanged();
-
-})
-
-minus.addEventListener("click", (event) => {
-  if(changeAltitude === 0){
-    return}
+// Altitude decrease
+minus.addEventListener("click", () => {
+  if (changeAltitude === 0) return;
   changeAltitude -= 1000;
-  updateAndSpeakCommandIfChanged();
-})
+  handleCommandPreview();
+});
 
-function generateCommandSpeech() {
-  if (!submitdata?.label) {
-    console.warn("No plane selected.");
-    return "No valid plane selected.";
+// Submit and issue command
+submit.addEventListener('click', () => {
+  previousAltitude = submitdata.altitude;
+
+  if (submitdata.altitude === 0 && submitdata.takeoff === true) {
+    submitdata.altitude = 1000;
+
+  } else {
+    submitdata.altitude = changeAltitude;
   }
 
-  const callSign = submitdata.label.toUpperCase();
-  const altitude = submitdata.altitude;
-  const heading = submitdata.heading;   // You can extend this
-  const waypoint = submitdata.waypoint; // Optional custom field
+  const command = generateCommandSpeechFrom(submitdata, previousAltitude);
+  console.log(command);
+  speakCommand(command);
+  commandElement.textContent = command;
+  socket.emit('submit-plane', submitdata);
 
-  let command = "";
-   if (degrees > 0) {
-    const dir = degrees >= 180 ? "RIGHT" : "LEFT";
-    const formattedHeading = degrees.toString().padStart(3, "0");
-    command = `${callSign}, turn ${dir} heading ${formattedHeading}.`;
-  }
-  // Priority 4: Climb or descend if altitude
-  else if (previousAltitude !== submitdata.altitude) {
-    if (altitude > 3000) {
-      command = `${callSign}, climb and maintain ${altitude.toLocaleString()} feet.`;
-    } else if (altitude < 3000) {
-      command = `${callSign}, descend and maintain ${altitude.toLocaleString()} feet.`;
-    } else {
-      command = `${callSign}, maintain ${altitude.toLocaleString()} feet.`;
-    }
-  }
-  else {
-    command = `${callSign}, say again.`;
-  }
+  degrees = 0;
+  changeAltitude = 0;
 
-  return command;
+  console.log('submitted data:', submitdata);
+});
+
+// Preview updated command (without submission)
+function handleCommandPreview() {
+  const simulatedAltitude = changeAltitude;
+  const currentAltitude = submitdata.altitude;
+
+  if (simulatedAltitude !== currentAltitude || degrees !== 0) {
+    const tempSubmitData = { ...submitdata, altitude: simulatedAltitude };
+    const simulatedCommand = generateCommandSpeechFrom(tempSubmitData, currentAltitude);
+    console.log(simulatedCommand);
+    commandElement.textContent = simulatedCommand;
+  }
 }
 
+// Generate full command speech
+function generateCommandSpeechFrom(data, prevAltitude) {
+  const callSign = data.label;
+  const altitude = data.altitude;
+  const heading = data.heading;
+  const dir = degrees < 0 ? "LEFT" : "RIGHT";
+  const formattedHeading = Math.abs(degrees).toString().padStart(3, "0");
+
+  let command1 = "";
+  if (degrees !== 0) {
+    if (degrees === -360 || degrees === 360) {
+      command1 = `ORBIT ${dir}`;
+    } else if (degrees === 405 || degrees === -405) {
+      command1 = `HOLD ${dir}`;
+    } else {
+      command1 = `TURN ${dir} -> ${formattedHeading}`;
+    }
+  } else if (degrees === heading) {
+    command1 = `Head to ${heading}`;
+  }
+
+  let command2 = "";
+  if (prevAltitude !== altitude && altitude !== 0) {
+    command2 = prevAltitude > altitude
+      ? `DESCEND AND MAINTAIN ${altitude.toLocaleString()} FEET.`
+      : `CLIMB AND MAINTAIN ${altitude.toLocaleString()} FEET.`;
+  } else {
+    command2 = `AT ${altitude.toLocaleString()} FEET `;
+  }
+
+  let  speechCommand = `${callSign} ${command1} ${command2}`;
+  socket.emit('send-command', speechCommand);
+  return speechCommand;
+}
+
+// Speak the command out loud
 function speakCommand(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 0.9;
   speechSynthesis.speak(utterance);
 }
 
-function updateAndSpeakCommandIfChanged() {
-  const command = generateCommandSpeech();
-    commandElement.textContent = command;
-}
+
 // 10.0.2.10
