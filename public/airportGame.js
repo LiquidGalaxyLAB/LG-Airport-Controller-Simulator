@@ -145,7 +145,7 @@ function screenSetup(screen) {
 socket.on("new-screen", screenSetup);
 function onCreateplane(aeroplane) {
   if (Number(screenNumber) === Number(aeroplane.screen)) {
-    
+ 
       airplanes.push({
         ...aeroplane,
         img: airplaneImages.white,
@@ -153,6 +153,7 @@ function onCreateplane(aeroplane) {
         dy: aeroplane.dy || 0,
         rotation: aeroplane.rotation !== undefined ? aeroplane.rotation : 0, 
       });
+
 
     socket.emit("get-aeroplane", airplanes);
   }
@@ -216,7 +217,7 @@ function drawMap(row) {
           socket.emit('airport-positions', labelPositions);
 
         }
-        ctx.font = "20px MONOSPACE";
+        ctx.font = "20px Inter";
         ctx.fontWeight = "bold";
         ctx.fillStyle = "#e2e8f0";  
         ctx.textAlign = "center";
@@ -304,8 +305,10 @@ function addAeroplane(row) {
       
 
       for (const plane of airplanes) {
-        plane.x += plane.dx;
-        plane.y += plane.dy;
+        if (!plane.takeoff && plane.source.label === 'ALT' && plane.altitude !== 0) {
+          plane.x += plane.dx;
+          plane.y += plane.dy;
+        }
 
         let  transferred;
         if(nScreens == 3){
@@ -322,7 +325,7 @@ function addAeroplane(row) {
 
         if (plane.conflict) {
           plane.img = airplaneImages.red;
-        } else if (plane.altitude === 0) {
+        } else if (plane.altitude === 0 || plane.takeoff) {
           plane.img = airplaneImages.takeLandOff;
         } else {
           plane.img = airplaneImages.white;
@@ -652,7 +655,7 @@ function postionAeroplane(data) {
     selected: false,
     altitude: data.label === 'ALT' ? 0 : 1000,
     conflict: false,
-    takeoff: data.label === 'ALT' ? true : false,
+    takeoff:false,
     landoff : false,
     rotationstack: [],
     heading : 0,
@@ -774,7 +777,7 @@ function submitPlane(data) {
     plane.rotationstackPreview = [];
     plane.altitude = data.altitude;
     plane.selected = false;
-    
+    plane.takeoff = data.takeoff;
     
     socket.emit("update-heading-altitude", {
       heading: plane.heading,
@@ -791,6 +794,15 @@ socket.on("submit-aeroplane", submitPlane);
 
 socket.on("command-plane", (data) => {
   if(screenNumber !== "1") return
-  document.getElementById("command").textContent  = data;
+  const commandEl = document.getElementById("command")
+  commandEl.style.opacity="1";
+  commandEl.textContent  = data;
+  if (commandtimeout) {
+    clearTimeout(commandtimeout);
+  }
+  commandtimeout = setTimeout(() => {
+    commandEl.style.opacity = 0;
+    commandtimeout = null; // Reset reference
+  }, 5000);
 }
 )

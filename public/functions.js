@@ -267,7 +267,7 @@ export function infobar (container){
 
   const command = document.createElement("div");
   command.id = "command";
-  command.textContent = ""
+  command.textContent = "Command"
 
 
   const error = document.createElement("div");

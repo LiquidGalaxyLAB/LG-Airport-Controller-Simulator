@@ -119,8 +119,9 @@ minus.addEventListener("click", () => {
 submit.addEventListener('click', () => {
   previousAltitude = submitdata.altitude;
 
-  if (submitdata.altitude === 0 && submitdata.takeoff === true) {
+  if (submitdata.altitude === 0 ) {
     submitdata.altitude = 1000;
+    submitdata.takeoff = true;
 
   } else {
     submitdata.altitude = changeAltitude;

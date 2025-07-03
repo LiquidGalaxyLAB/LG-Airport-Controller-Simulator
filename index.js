@@ -110,8 +110,9 @@ app.get("/:id", (req, res) => {
 
 
     socket.on("add-plane", (data)=>{
-      data.destation = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
+      const destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
       data.source = allpostionAirpots.find(airport => airport.label === data.label);
+      data.destation = destationdata.label !== data.source.label ? destationdata : allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
       io.emit("add-aeroplane", data);
       console.log("Adding aeroplane" , data);
     });
@@ -141,7 +142,7 @@ app.get("/:id", (req, res) => {
 });
 
 socket.on('submit-plane', (key) => {
-  io.emit('submit-aeroplane', { dir: key.label ,altitude: key.altitude  });
+  io.emit('submit-aeroplane', { dir: key.label ,altitude: key.altitude , takeoff: key.takeoff});
   console.log('Selecting plane', key);
 });
 
@@ -180,10 +181,11 @@ socket.on('get-airport-positions', (callback) => {
   callback(allpostionAirpots); // Send back data only to requester
 });
 
-
+let planes = {}
 socket.on('get-aeroplane', (data) => {
-  // Now re-emit to all connected clients
-  io.emit('aeroplane-data', data); // you can rename this
+  
+  planes = data; 
+  io.emit('aeroplane-data', planes); // you can rename this
 });
     
   socket.on('postwidth', (data) => {
