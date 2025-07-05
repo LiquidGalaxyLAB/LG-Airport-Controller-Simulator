@@ -127,16 +127,16 @@ function screenSetup(screen) {
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
     else if(screenNumber == 2) {
-      if(nScreens == 3) infobar2(centerText)
+       infobar2(centerText,nScreens=== 3 ? 'screen':'none')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 3 ) {
-      if(nScreens == 3) infobar3(centerText)
+      infobar3(centerText,nScreens=== 3 ? 'screen':'none')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 4 ) {
-      if(nScreens == 5) infobar2(centerText)
+      if(nScreens == 5) infobar2(centerText,'screen')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 5 ) {
-      if(nScreens == 5) infobar3(centerText)
+      if(nScreens == 5) infobar3(centerText,'screen')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
 
@@ -305,10 +305,10 @@ function addAeroplane(row) {
       
 
       for (const plane of airplanes) {
-        if (!plane.takeoff && plane.source.label === 'ALT' && plane.altitude !== 0) {
+        
           plane.x += plane.dx;
           plane.y += plane.dy;
-        }
+        
 
         let  transferred;
         if(nScreens == 3){
@@ -325,7 +325,7 @@ function addAeroplane(row) {
 
         if (plane.conflict) {
           plane.img = airplaneImages.red;
-        } else if (plane.altitude === 0 || plane.takeoff) {
+        } else if (plane.altitude === 0 ) {
           plane.img = airplaneImages.takeLandOff;
         } else {
           plane.img = airplaneImages.white;
@@ -346,11 +346,11 @@ function addAeroplane(row) {
         }
 
         if (plane.takeoff ) {
-          if (frameCount % 10 === 0 && takeoffdata < 50) {
+          if (frameCount % 20 === 0 && takeoffdata < 40) {
             takeoffdata += 5;
-            takeoffdata === 50 ? (plane.altitude = 1000 , takeoffdata = 0 ,plane.takeoff = false ): null;
+            takeoffdata === 40 ? (plane.altitude = 1000 , takeoffdata = 0 ,plane.takeoff = false ): null;
           }
-          ctx.rotate(degToRad(takeoffdata));
+          ctx.rotate(degToRad(takeoffdata));  
           const angleRad = degToRad(takeoffdata - 180);
   
           plane.dx = Math.cos(angleRad) * 0.5;
@@ -655,7 +655,7 @@ function postionAeroplane(data) {
     selected: false,
     altitude: data.label === 'ALT' ? 0 : 1000,
     conflict: false,
-    takeoff:false,
+    takeoff: data.label === 'ALT' ? true : false,
     landoff : false,
     rotationstack: [],
     heading : 0,
@@ -758,6 +758,7 @@ socket.on("error-popup", (data) => {
   if (screenNumber !== "1") return;
   const errorEl = document.getElementById("error"); 
      errorEl.textContent = data.error;
+     document.getElementById("errorSound").play();
       if (errorTimeout) {
         clearTimeout(errorTimeout);
       }
@@ -777,7 +778,7 @@ function submitPlane(data) {
     plane.rotationstackPreview = [];
     plane.altitude = data.altitude;
     plane.selected = false;
-    plane.takeoff = data.takeoff;
+    // plane.takeoff = data.takeoff;
     
     socket.emit("update-heading-altitude", {
       heading: plane.heading,

@@ -281,25 +281,19 @@ export function infobar (container){
 }
 
 
-let totalSeconds = 600; // 10 minutes
+let totalSeconds = 0;
 
 function updateTimer() {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   document.getElementById('time').textContent = `${minutes}:${seconds}`;
-
-  if (totalSeconds > 0) {
-    totalSeconds--;
-  } else {
-    clearInterval(timerInterval);
-    document.getElementById('timer').textContent = "TIME UP";
-  }
+  totalSeconds++; // keep incrementing forever
 }
 
 const timerInterval = setInterval(updateTimer, 1000);
 
 
-export function infobar2 (container){
+export function infobar2 (container,dispaly){
   const sourcemain = document.createElement("div"); 
   sourcemain.id = "sourcemain";
   sourcemain.className = "infobar";
@@ -328,17 +322,19 @@ export function infobar2 (container){
   destination.textContent = "MIA";
   destination.className = "infobar-data"; 
 
-
+ 
   sourcemain.appendChild(source);
   sourcemain.appendChild(origin);
   destmain.appendChild(dest);
   destmain.appendChild(destination);
+  sourcemain.style.opacity = dispaly === 'none' ? 0 : 1
+  destmain.style.opacity = dispaly === 'none' ? 0 : 1
   container.appendChild(sourcemain);
   container.appendChild(destmain);
 }
 
 
-export function infobar3 (container){
+export function infobar3 (container,dispaly){
   const headingMain = document.createElement("div"); 
   headingMain.className = "infobar";
 
@@ -370,6 +366,8 @@ export function infobar3 (container){
   headingMain.appendChild(headingData);
   altitudeMain.appendChild(altitude);
   altitudeMain.appendChild(altitudeData);
+  headingMain.style.opacity = dispaly === 'none' ? 0 : 1
+  altitudeMain.style.opacity = dispaly === 'none' ? 0 : 1
   container.appendChild(headingMain);
   container.appendChild(altitudeMain);
 }

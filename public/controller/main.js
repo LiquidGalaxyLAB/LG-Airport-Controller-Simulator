@@ -13,10 +13,11 @@ const planes = document.getElementById('plane');
 const plus = document.getElementById('plus'); 
 const minus = document.getElementById('minus'); 
 const commandElement = document.getElementById('command'); 
+const playerror = document.getElementById('errorSound');
 let airportPositions = []
 let airplones = [];
 let submitdata = {};
-let changeAltitude = 0;
+let changeAltitude = 1000;
 let degrees = 0;
 socket.on('all-airport-positions', (data) => {
     console.log('Received updated airport positions from server:', data);
@@ -56,6 +57,7 @@ socket.on('all-airport-positions', (data) => {
         changeAltitude = airport.altitude;
         degrees = airport.heading;
         socket.emit('select-plane', airport.label);
+        handleCommandPreview();
       });
   
       postionAirpots.appendChild(button);
@@ -119,9 +121,9 @@ minus.addEventListener("click", () => {
 submit.addEventListener('click', () => {
   previousAltitude = submitdata.altitude;
 
-  if (submitdata.altitude === 0 ) {
+  if (submitdata.altitude === 0   ) {
     submitdata.altitude = 1000;
-    submitdata.takeoff = true;
+    // submitdata.takeoff = true;
 
   } else {
     submitdata.altitude = changeAltitude;
@@ -142,14 +144,14 @@ submit.addEventListener('click', () => {
 // Preview updated command (without submission)
 function handleCommandPreview() {
   const simulatedAltitude = changeAltitude;
-  const currentAltitude = submitdata.altitude;
+  const currentAltitude = submitdata.altitude === 0  && submitdata.takeoff ? 1000 : submitdata.altitude;
 
-  if (simulatedAltitude !== currentAltitude || degrees !== 0) {
+ 
     const tempSubmitData = { ...submitdata, altitude: simulatedAltitude };
     const simulatedCommand = generateCommandSpeechFrom(tempSubmitData, currentAltitude);
     console.log(simulatedCommand);
     commandElement.textContent = simulatedCommand;
-  }
+  
 }
 
 // Generate full command speech
@@ -169,16 +171,23 @@ function generateCommandSpeechFrom(data, prevAltitude) {
     } else {
       command1 = `TURN ${dir} -> ${formattedHeading}`;
     }
-  } else if (degrees === heading) {
-    command1 = `Head to ${heading}`;
   }
+  // else if (degrees === heading && data.takeoff === true) {
+  //   command1 = `Head to 270 CLIMB-> 1000 FEET CLEARED TO TAKEOFF`;
+  // } 
+  // else if (degrees === heading) {
+  //   command1 = `Head to ${heading}`;
+  // }
 
   let command2 = "";
   if (prevAltitude !== altitude && altitude !== 0) {
     command2 = prevAltitude > altitude
       ? `DESCEND AND MAINTAIN ${altitude.toLocaleString()} FEET.`
       : `CLIMB AND MAINTAIN ${altitude.toLocaleString()} FEET.`;
-  } else {
+  }else if(altitude === 0){
+    
+  }
+   else {
     command2 = `AT ${altitude.toLocaleString()} FEET `;
   }
 
@@ -195,4 +204,12 @@ function speakCommand(text) {
 }
 
 
-// 10.0.2.10
+socket.on('error-popup', (data) => {
+  // Play the error sound
+  errorSound.play().catch(err => {
+    console.error('Error playing sound:', err);
+  });
+  
+  // Optional: Handle the error data
+  console.log('Error data:', data);
+});
