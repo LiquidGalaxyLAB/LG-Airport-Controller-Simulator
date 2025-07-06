@@ -17,6 +17,14 @@ const controllerFile = "controller/index.html";
 const allpostionAirpots = [];
 const allscreenwidth =[];
 
+let planes = {
+  1: [],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+};
+
 // Variables
 var screenNumber = 1;
 var myArgs = process.argv.slice(2);
@@ -51,31 +59,27 @@ app.get("/:id", (req, res) => {
         socket.emit("new-screen", {
             number: Number(screenNumber),
             nScreens: nScreens,
-    }); //tell to load screen on local and its number
-
-  // Listen for create-aeroplane request from client
+    });  
+    
   socket.on("create-aeroplane", (data) => {
             console.log("Received create-aeroplane request:", data);
-            // Add some default values if missing
             const aeroplaneData = {
             ...data,
             dx: data.dx || 0,
             dy: data.dy || 0,
-            id: Date.now() + Math.random(), // unique ID
+            id: Date.now() + Math.random(), 
             };
-            // Broadcast to ALL clients (this will trigger the creation)
     io.emit("aeroplane-create", aeroplaneData);
   });
 
   // Handle transfer between screens
   socket.on("transfer-aeroplane", (planeData) => {
-    // const width  = allscreenwidth.findIndex((existing) => existing.screen === planeData.screen);
     // -4<-2<-1<-3<-5
 
     if(planeData.x === -3){
-      const screenEntry = allscreenwidth.find(obj => obj[1]);
+      const screenEntry = allscreenwidth.find(obj => obj[3]);
       if (screenEntry) {
-        planeData.x = screenEntry[1].data.width;
+        planeData.x = screenEntry[3].data.width;
       }
     }
     if(planeData.x === -2){
@@ -142,15 +146,13 @@ app.get("/:id", (req, res) => {
 });
 
 socket.on('submit-plane', (key) => {
-  io.emit('submit-aeroplane', { dir: key.label ,altitude: key.altitude , takeoff: key.takeoff});
+  io.emit('submit-aeroplane', key);
   console.log('Selecting plane', key);
 });
 
 
 socket.on('airport-positions', (data) => {
-  console.log('====================================');
-  console.log('Received updated airport positions ckient:', data);
-  console.log('====================================');
+  console.log('Received updated airport positions client:', data);
   data.forEach((incoming) => {
     if(incoming.label === 'ALT') {
       incoming.y -= 20
@@ -168,8 +170,6 @@ socket.on('airport-positions', (data) => {
     }
   });
   
-  // console.log('New airport positions:', newEntries);
-  // allpostionAirpots.push(...newEntries);
   console.log('Updated all airport positions:', allpostionAirpots);
   io.emit('all-airport-positions', allpostionAirpots);
 
@@ -181,13 +181,25 @@ socket.on('get-airport-positions', (callback) => {
   callback(allpostionAirpots); // Send back data only to requester
 });
 
-let planes = {}
-socket.on('get-aeroplane', (data) => {
-  
-  planes = data; 
-  io.emit('aeroplane-data', planes); // you can rename this
-});
+
+socket.on("get-aeroplane", (data) => {
+  const { screenNumber, airplanes } = data;
+  if (
+    typeof screenNumber !== "undefined" &&
+    Array.isArray(airplanes)
+  ) {
+    planes[screenNumber] = airplanes;
+
+    console.log(`✅ Updated screen ${screenNumber} with ${airplanes.length} planes`);
+    console.log('📡 Full planes state now:', JSON.stringify(planes, null, 2));
     
+    io.emit("aeroplane-data", planes);
+  } else {
+    console.warn("⚠️ Invalid airplane data received");
+  }
+});
+
+
   socket.on('postwidth', (data) => {
     console.log('Received updated airport width from server:', data);
     const index = allscreenwidth.findIndex(

@@ -17,7 +17,7 @@ const playerror = document.getElementById('errorSound');
 let airportPositions = []
 let airplones = [];
 let submitdata = {};
-let changeAltitude = 1000;
+let changeAltitude = 0;
 let degrees = 0;
 socket.on('all-airport-positions', (data) => {
     console.log('Received updated airport positions from server:', data);
@@ -48,22 +48,28 @@ socket.on('all-airport-positions', (data) => {
     postionAirpots.innerHTML = '';
     airportPositions = data;
   
-    data.forEach((airport) => {
-      const button = document.createElement("button");
-      button.className = "custom-button";
-      button.textContent = airport.label;
-      button.addEventListener("click", () => {
-        submitdata = airport;
-        changeAltitude = airport.altitude;
-        degrees = airport.heading;
-        socket.emit('select-plane', airport.label);
-        handleCommandPreview();
-      });
-  
-      postionAirpots.appendChild(button);
+    // Iterate through object entries
+    Object.entries(data).forEach(([screenNumber, airplanes]) => {
+      // Check if airplanes exists and is an array
+      if (airplanes && Array.isArray(airplanes)) {
+        airplanes.forEach((airplane) => {
+          const button = document.createElement("button");
+          button.className = "custom-button";
+          button.textContent = `${airplane.label}`;
+          button.addEventListener("click", () => {
+            submitdata = airplane;
+            changeAltitude = airplane.altitude;
+            degrees = airplane.heading;
+            socket.emit('select-plane', airplane.label);
+            handleCommandPreview();
+          });
+          
+          postionAirpots.appendChild(button);
+        });
+      }
     });
+    
   });
-  
 
 
 
@@ -121,7 +127,7 @@ minus.addEventListener("click", () => {
 submit.addEventListener('click', () => {
   previousAltitude = submitdata.altitude;
 
-  if (submitdata.altitude === 0   ) {
+  if (submitdata.takeoff ) {
     submitdata.altitude = 1000;
     // submitdata.takeoff = true;
 
@@ -129,14 +135,15 @@ submit.addEventListener('click', () => {
     submitdata.altitude = changeAltitude;
   }
 
+  submitdata.heading = degrees;
   const command = generateCommandSpeechFrom(submitdata, previousAltitude);
   console.log(command);
   speakCommand(command);
   commandElement.textContent = command;
   socket.emit('submit-plane', submitdata);
 
-  degrees = 0;
-  changeAltitude = 0;
+  // degrees = 0;
+  // changeAltitude = 0;
 
   console.log('submitted data:', submitdata);
 });
@@ -175,9 +182,9 @@ function generateCommandSpeechFrom(data, prevAltitude) {
   // else if (degrees === heading && data.takeoff === true) {
   //   command1 = `Head to 270 CLIMB-> 1000 FEET CLEARED TO TAKEOFF`;
   // } 
-  // else if (degrees === heading) {
-  //   command1 = `Head to ${heading}`;
-  // }
+  else if (degrees === heading) {
+    command1 = `Head to ${heading}`;
+  }
 
   let command2 = "";
   if (prevAltitude !== altitude && altitude !== 0) {

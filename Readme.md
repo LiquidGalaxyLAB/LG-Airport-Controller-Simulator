@@ -17,7 +17,7 @@ Replace 5 with 3  if you have screen 3.
 
 Now open:
 
-    Screens: lg1:3000/1, lg2:3000/2, etc uptill 5 for 5 screen and same for 3.
+    Screens: lg1:3000/1, lg1:3000/2, etc uptill 5 for 5 screen and same for 3.
 
 📱 Controlling the Simulator
 
