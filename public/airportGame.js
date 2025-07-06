@@ -6,9 +6,11 @@ import {
   generateSlaveMapLayout3_5,
   generateSlaveMapLayout4_5,
   generateSlaveMapLayout5,
+  getOffsets,
   infobar,
   infobar2,
   infobar3,
+  labelConfig,
   labelMap,
   LANDINGSVG,
   RUNWAY,
@@ -50,7 +52,6 @@ const spacing = 45; // distance between dots
 let rows = Math.floor(HEIGHT / spacing);
 let cols = Math.floor(WIDTH / spacing);
 
-// canvas.width = BLOCK_SIZE * GRID_WIDTH + WALL_LINE_WIDTH
 
 const ctx = canvas.getContext("2d");
 
@@ -105,18 +106,18 @@ function screenSetup(screen) {
     screenNumber == 1
       ? generateMasterMap(rows, cols) 
       : screenNumber == 2
-      ? generateSlaveMapLayout2(rows, cols)
-      : generateSlaveMapLayout3(rows, cols);
+      ?generateSlaveMapLayout3 (rows, cols,canvas)
+      : generateSlaveMapLayout2(rows, cols,canvas);
   }
   if(nScreens == 5){
     currentMap =
     screenNumber == 1
       ? generateMasterMap(rows, cols) 
-      : screenNumber == 2
-      ? generateSlaveMapLayout4_5(rows, cols)
       : screenNumber == 3
+      ? generateSlaveMapLayout4_5(rows, cols)
+      : screenNumber == 2
       ? generateSlaveMapLayout3_5(rows, cols)
-      :  screenNumber == 4 
+      :  screenNumber == 5 
       ? generateSlaveMapLayout2_5(rows, cols)
       : generateSlaveMapLayout5(rows, cols);
   }
@@ -126,27 +127,25 @@ function screenSetup(screen) {
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
     else if(screenNumber == 2) {
-      if(nScreens == 3) infobar2(centerText)
+       infobar2(centerText,nScreens=== 3 ? 'screen':'none')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 3 ) {
-      if(nScreens == 3) infobar3(centerText)
+      infobar3(centerText,nScreens=== 3 ? 'screen':'none')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 4 ) {
-      if(nScreens == 5) infobar2(centerText)
+      if(nScreens == 5) infobar2(centerText,'screen')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }else if(screenNumber == 5 ) {
-      if(nScreens == 5) infobar3(centerText)
+      if(nScreens == 5) infobar3(centerText,'screen')
       socket.emit('postwidth', {width: WIDTH, height: HEIGHT , screen: screenNumber})
     }
 
   createGrid(currentMap);
 }
 socket.on("new-screen", screenSetup);
-
 function onCreateplane(aeroplane) {
-  // Only render if it's for this screen
   if (Number(screenNumber) === Number(aeroplane.screen)) {
-    
+ 
       airplanes.push({
         ...aeroplane,
         img: airplaneImages.white,
@@ -155,9 +154,11 @@ function onCreateplane(aeroplane) {
         rotation: aeroplane.rotation !== undefined ? aeroplane.rotation : 0, 
       });
 
+
     socket.emit("get-aeroplane", airplanes);
   }
 }
+
 
 socket.on("aeroplane-create", onCreateplane);
 
@@ -210,12 +211,13 @@ function drawMap(row) {
             x: x,
             y: y,
             screen: parseInt(screenNumber),
+            
           });
           // (textLabels[key] === 'ALT') ? y - 25 : y,
           socket.emit('airport-positions', labelPositions);
 
         }
-        ctx.font = "20px MONOSPACE";
+        ctx.font = "20px Inter";
         ctx.fontWeight = "bold";
         ctx.fillStyle = "#e2e8f0";  
         ctx.textAlign = "center";
@@ -303,8 +305,10 @@ function addAeroplane(row) {
       
 
       for (const plane of airplanes) {
-        plane.x += plane.dx;
-        plane.y += plane.dy;
+        
+          plane.x += plane.dx;
+          plane.y += plane.dy;
+        
 
         let  transferred;
         if(nScreens == 3){
@@ -321,7 +325,7 @@ function addAeroplane(row) {
 
         if (plane.conflict) {
           plane.img = airplaneImages.red;
-        } else if (plane.altitude === 0) {
+        } else if (plane.altitude === 0 ) {
           plane.img = airplaneImages.takeLandOff;
         } else {
           plane.img = airplaneImages.white;
@@ -342,11 +346,11 @@ function addAeroplane(row) {
         }
 
         if (plane.takeoff ) {
-          if (frameCount % 10 === 0 && takeoffdata < 50) {
+          if (frameCount % 20 === 0 && takeoffdata < 40) {
             takeoffdata += 5;
-            takeoffdata === 50 ? (plane.altitude = 1000 , takeoffdata = 0 ,plane.takeoff = false ): null;
+            takeoffdata === 40 ? (plane.altitude = 1000 , takeoffdata = 0 ,plane.takeoff = false ): null;
           }
-          ctx.rotate(degToRad(takeoffdata));
+          ctx.rotate(degToRad(takeoffdata));  
           const angleRad = degToRad(takeoffdata - 180);
   
           plane.dx = Math.cos(angleRad) * 0.5;
@@ -375,10 +379,14 @@ function addAeroplane(row) {
           Math.abs(destination.x - plane.x) < 10 &&
           Math.abs(destination.y - plane.y) < 10 
         ) {
-          console.log(`✔ Plane reached destination (within margin): ${plane.label}`);
-          alert(`✔ Plane reached destination (within margin): ${plane.label}`);
+          console.log(`✔ Plane reached destination: ${plane.label}`);
+          alert(`✔ Plane reached destination : ${plane.label}`);
           airplanes.splice(airplanes.indexOf(plane), 1);
         }
+        if (plane.heading > 90 && plane.heading < 270) {
+          ctx.scale(1, -1); // Flip vertically to prevent upside down
+        }
+        
         ctx.drawImage(plane.img, -20, -20); 
         ctx.restore(); 
 
@@ -461,19 +469,19 @@ function handleTraverseAeroplane(plane, screenNumber) {
       socket.emit("transfer-aeroplane", {
         ...plane,
         x: 0,
-        screen: 3,
+        screen: 2,
       });
     } else if (screenNumber == 2) {
       // left → middle
+      socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
+    } else if (screenNumber == 3) {
+      // right → wrap to left
       socket.emit("transfer-aeroplane", {
         ...plane,
         x: 0,
         screen: 1,
-      });
-    } else if (screenNumber == 3) {
-      // right → wrap to left
-      socket.emit("error-popup", {
-        error: 'Wrong exit',
       });
         // alert("Wrong exit");
     }
@@ -486,21 +494,22 @@ function handleTraverseAeroplane(plane, screenNumber) {
       // middle → left
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -2,
-        screen: 2,
+        x: -3,
+        screen: 3,
       });
     } else if (screenNumber == 2) {
       // left → wrap to right
-          socket.emit("error-popup", {
-        error: 'Wrong exit',
-      });
-    } else if (screenNumber == 3) {
-      // right → middle
       socket.emit("transfer-aeroplane", {
         ...plane,
         x: -3,
         screen: 1,
       });
+    } else if (screenNumber == 3) {
+      // right → middle
+      socket.emit("error-popup", {
+        error: 'Wrong exit',
+      });
+     
     }
     airplanes.splice(airplanes.indexOf(plane), 1);
     return true;
@@ -533,30 +542,30 @@ function handleTraverseAeroplane5(plane, screenNumber) {
       socket.emit("transfer-aeroplane", {
         ...plane,
         x: 0,
-        screen: 3,
+        screen: 2,
       });
-    } else if (screenNumber == 2) {
+    } else if (screenNumber == 3) {
       // left → middle
       socket.emit("transfer-aeroplane", {
         ...plane,
         x: 0,
         screen: 1,
       });
-    } else if (screenNumber == 4) {
-      // left → middle
-      socket.emit("transfer-aeroplane", {
-        ...plane,
-        x: 0,
-        screen: 2,
-      });
-    }else if (screenNumber == 3) {
-      // left → middle
-      socket.emit("transfer-aeroplane", {
-        ...plane,
-        x: 0,
-        screen: 5,
-      });
     } else if (screenNumber == 5) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 3,
+      });
+    }else if (screenNumber == 2) {
+      // left → middle
+      socket.emit("transfer-aeroplane", {
+        ...plane,
+        x: 0,
+        screen: 4,
+      });
+    } else if (screenNumber == 4) {
       // right → wrap to left
       socket.emit("error-popup", {
         error: 'Wrong exit',
@@ -572,23 +581,23 @@ function handleTraverseAeroplane5(plane, screenNumber) {
       // middle → left
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -2,
-        screen: 2,
+        x: -3,
+        screen: 3,
       });
-    }else if (screenNumber == 2) {
+    }else if (screenNumber == 3) {
       // right → 1
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -4,
-        screen: 4,
+        x: -5,
+        screen: 5,
       });
-    } else if (screenNumber == 4) {
+    } else if (screenNumber == 5) {
       socket.emit("error-popup", {
         error: 'Wrong exit',
       });
       // confirm("Wrong exit");
       // left → wrap to right
-    } else if (screenNumber == 3) {
+    } else if (screenNumber == 2) {
       // right → 1
       socket.emit("transfer-aeroplane", {
         ...plane,
@@ -596,12 +605,12 @@ function handleTraverseAeroplane5(plane, screenNumber) {
         screen: 1,
       });
     }
-    else if (screenNumber == 5) {
+    else if (screenNumber == 4) {
       // right → 3
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -5,
-        screen: 3,
+        x: -4,
+        screen: 2,
       });}
     airplanes.splice(airplanes.indexOf(plane), 1);
     return true;
@@ -628,20 +637,28 @@ function handleTraverseAeroplane5(plane, screenNumber) {
 
 
 function postionAeroplane(data) {
+  const label = data.source.label // ensure uppercase
+  const config = labelConfig[label] || { angle: 0 };
+  const speed = 0.5;
+
+  const rad = (config.angle * Math.PI) / 180;
+  const dx = -Math.cos(rad) * speed;
+  const dy = -Math.sin(rad) * speed;
   const newAeroplane = {
     x: data.x,
     y: data.y,
     label: getCharater(data),
     screen: Number(data.source.screen) || 1,
-    dx: -0.5,
-    dy: 0,
-    rotation: 0,
+    dx: dx,
+    dy: dy,
+    rotation: config.angle,
     selected: false,
     altitude: data.label === 'ALT' ? 0 : 1000,
     conflict: false,
     takeoff: data.label === 'ALT' ? true : false,
     landoff : false,
     rotationstack: [],
+    heading : 0,
     rotationstackPreview: [],
     destation: data.destation || {label: 'WSH', x: 358.5, y: 26.5, screen: 2},
     source: data.source || {label: 'ALT', x: 293.5, y: 341.5, screen: 1}
@@ -672,9 +689,11 @@ function updatePlane(data) {
       (data.dir === "right" && lastRotation === "left")
     ) {
       plane.rotationstackPreview.pop();
+      plane.heading = plane.heading - 45 
     } else {
       // Otherwise, push it
       plane.rotationstackPreview.push(data.dir);
+      plane.heading = plane.heading + 45
     }
   
    
@@ -703,7 +722,7 @@ function selectPlane(data) {
     plane.altitude = data.altitude;
 
     socket.emit("update-heading-altitude", {
-      heading: "25",
+      heading: plane.heading,
       altitude : plane.altitude,
       screen: nScreens == 3 ? '3' : '5',
 
@@ -736,8 +755,10 @@ socket.on("update-heading-altitude", (data) => {
 let errorTimeout; 
 socket.on("error-popup", (data) => {
   console.log(data);
-  if (data.screen !== 1) {
-      document.getElementById("error").textContent = data.error;
+  if (screenNumber !== "1") return;
+  const errorEl = document.getElementById("error"); 
+     errorEl.textContent = data.error;
+     document.getElementById("errorSound").play();
       if (errorTimeout) {
         clearTimeout(errorTimeout);
       }
@@ -746,7 +767,7 @@ socket.on("error-popup", (data) => {
         errorTimeout = null; // Reset reference
       }, 5000);
     return;
-  }
+  
 })
 
 
@@ -757,10 +778,10 @@ function submitPlane(data) {
     plane.rotationstackPreview = [];
     plane.altitude = data.altitude;
     plane.selected = false;
-    
+    // plane.takeoff = data.takeoff;
     
     socket.emit("update-heading-altitude", {
-      heading: "25",
+      heading: plane.heading,
       altitude : plane.altitude,
       screen: nScreens == 3 ? '3' : '5',
 
@@ -770,3 +791,19 @@ function submitPlane(data) {
 }
 socket.on("submit-aeroplane", submitPlane);
 
+
+
+socket.on("command-plane", (data) => {
+  if(screenNumber !== "1") return
+  const commandEl = document.getElementById("command")
+  commandEl.style.opacity="1";
+  commandEl.textContent  = data;
+  if (commandtimeout) {
+    clearTimeout(commandtimeout);
+  }
+  commandtimeout = setTimeout(() => {
+    commandEl.style.opacity = 0;
+    commandtimeout = null; // Reset reference
+  }, 5000);
+}
+)

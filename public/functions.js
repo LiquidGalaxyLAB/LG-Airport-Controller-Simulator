@@ -22,7 +22,8 @@ export function generateMasterMap(rows, cols) {
   return {map , points};
 }
 
-export function generateSlaveMapLayout2(rows, cols) {
+export function generateSlaveMapLayout2(rows, cols,canvas) {
+  canvas.style.marginLeft = 'auto'
   const map = [];
   const centerRow = Math.floor(rows / 2);
   const one_thridpart = (cols - Math.floor(cols / 3));
@@ -62,7 +63,8 @@ export function generateSlaveMapLayout2(rows, cols) {
   return {map , points};
 }
 
-export function generateSlaveMapLayout3(rows, cols) {
+export function generateSlaveMapLayout3(rows, cols,canvas) {
+  canvas.style.marginRight = 'auto'
   const map = [];
   const middleRow = Math.floor(rows / 2);
   const middleCol = Math.floor(cols / 2);
@@ -251,7 +253,7 @@ export const RUNWAY = `<svg width="94" height="11" viewBox="0 0 94 11" fill="non
 </svg>
 `
 
-export const TOP_OFFESET = 50;
+export const TOP_OFFESET = 70;
 
 export const airplanes = []
 const offsetX = 0 //offsetX
@@ -265,7 +267,7 @@ export function infobar (container){
 
   const command = document.createElement("div");
   command.id = "command";
-  command.textContent = "DL146 TURN RIGHT HEADING 230 AT 4000 FEET"
+  command.textContent = "Command"
 
 
   const error = document.createElement("div");
@@ -279,25 +281,19 @@ export function infobar (container){
 }
 
 
-let totalSeconds = 600; // 10 minutes
+let totalSeconds = 0;
 
 function updateTimer() {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   document.getElementById('time').textContent = `${minutes}:${seconds}`;
-
-  if (totalSeconds > 0) {
-    totalSeconds--;
-  } else {
-    clearInterval(timerInterval);
-    document.getElementById('timer').textContent = "TIME UP";
-  }
+  totalSeconds++; // keep incrementing forever
 }
 
 const timerInterval = setInterval(updateTimer, 1000);
 
 
-export function infobar2 (container){
+export function infobar2 (container,dispaly){
   const sourcemain = document.createElement("div"); 
   sourcemain.id = "sourcemain";
   sourcemain.className = "infobar";
@@ -326,17 +322,19 @@ export function infobar2 (container){
   destination.textContent = "MIA";
   destination.className = "infobar-data"; 
 
-
+ 
   sourcemain.appendChild(source);
   sourcemain.appendChild(origin);
   destmain.appendChild(dest);
   destmain.appendChild(destination);
+  sourcemain.style.opacity = dispaly === 'none' ? 0 : 1
+  destmain.style.opacity = dispaly === 'none' ? 0 : 1
   container.appendChild(sourcemain);
   container.appendChild(destmain);
 }
 
 
-export function infobar3 (container){
+export function infobar3 (container,dispaly){
   const headingMain = document.createElement("div"); 
   headingMain.className = "infobar";
 
@@ -368,6 +366,51 @@ export function infobar3 (container){
   headingMain.appendChild(headingData);
   altitudeMain.appendChild(altitude);
   altitudeMain.appendChild(altitudeData);
+  headingMain.style.opacity = dispaly === 'none' ? 0 : 1
+  altitudeMain.style.opacity = dispaly === 'none' ? 0 : 1
   container.appendChild(headingMain);
   container.appendChild(altitudeMain);
+}
+
+
+
+
+export const labelConfig = {
+  ALT: { angle: 0, dx: 0 },         
+
+  CHI: { angle: 225, dx: 30 },    
+  WSH: { angle: 270, dx: 30 },     
+
+  DAL: { angle: 180, dx: 20 },      
+  NOR: { angle: 135, dx: -25 },     
+
+  TAM: { angle: 90, dx: 25 },      
+
+  BST: { angle: 270, dx: 0 },      
+  LON: { angle: 0, dx: 30 },       
+  MIA: { angle: 90, dx: 0 },       
+};
+
+export function getOffsets(screen, width, height, cols, rows, spacing) {
+  const dotAreaWidth = cols * spacing;
+  const dotAreaHeight = rows * spacing;
+
+  const defaultY = Math.max((height - dotAreaHeight) / 2, 30);
+
+  if (screen === 1) {
+    return {
+      x: Math.max((width - dotAreaWidth) / 2, 60),
+      y: defaultY,
+    };
+  } else if (screen === 2) {
+    return {
+      x: 30,
+      y: defaultY,
+    };
+  } else {
+    return {
+      x: width - dotAreaWidth - 30,
+      y: defaultY,
+    };
+  }
 }

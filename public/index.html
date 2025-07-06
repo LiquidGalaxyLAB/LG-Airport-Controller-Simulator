@@ -15,9 +15,7 @@
         canvas {
             padding-left: 0;
             padding-right: 0;
-            padding-bottom: 20px;
-            margin-left: auto;
-            margin-right: auto;
+            margin-bottom: 20px;
             /* margin-top:140px; */
             display: block;
             font-family: "Inter", sans-serif;
@@ -38,6 +36,8 @@
             gap: 15px;
             margin: 20px;
             margin-bottom: 0px ;
+            /* align-items: center; */
+            /* justify-content: center; */
         }
         #time {
             text-align: center;
@@ -52,8 +52,8 @@
         }
         #command {
             color: #00ff00;
+            opacity: 0;
             font-size: clamp(1em, 2.5vw, 2em);
-            font-family: Retro;
             text-align: center;
         }
         
@@ -71,6 +71,8 @@
             color: #FFFFFF;
         }
         .errorData{
+            /* position: absolute; */
+            /* margin-top:13%; */
             text-align: center;
             color: #FF0000;
             font-size: clamp(1em, 2.5vw, 2em);
@@ -83,9 +85,11 @@
     <div id="center-text"></div>
 
     <canvas id="gameCanvas" >Canvas not supported by browser</canvas>
+
 </body>
 <!-- <script src="./js/howler.min.js"></script> -->
 <script src="/socket.io/socket.io.js"></script>
 <script src='airportGame.js' type="module"></script>
+
 
 </html>
