@@ -203,14 +203,20 @@ function generateCommandSpeechFrom(data, prevAltitude) {
   return speechCommand;
 }
 
-// Speak the command out loud
 function speakCommand(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 0.9;
+  
+  utterance.onend = function() {
+    // setTimeout(() => {
+      const utterance2 = new SpeechSynthesisUtterance("Roger");
+      utterance2.rate = 0.9;
+      speechSynthesis.speak(utterance2); 
+    // }, 100);
+  };
+  
   speechSynthesis.speak(utterance);
 }
-
-
 
 
 function playErrorSound() {
