@@ -211,12 +211,29 @@ function speakCommand(text) {
 }
 
 
-socket.on('error-popup', (data) => {
-  // Play the error sound
-  errorSound.play().catch(err => {
-    console.error('Error playing sound:', err);
-  });
+
+
+function playErrorSound() {
+  const audio = new Audio('../error.mp3');
+  audio.volume = 0.5;
   
-  // Optional: Handle the error data
+  audio.play().catch(err => {
+    console.log('Direct play failed, trying with user interaction simulation');
+    
+    // Simulate click event
+    document.body.dispatchEvent(new MouseEvent('click', { 
+      view: window, 
+      bubbles: true, 
+      cancelable: true 
+    }));
+    
+    setTimeout(() => {
+      audio.play().catch(console.error);
+    }, 10);
+  });
+}
+
+socket.on('error-popup', (data) => {
+  playErrorSound();
   console.log('Error data:', data);
 });

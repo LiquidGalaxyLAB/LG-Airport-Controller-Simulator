@@ -350,9 +350,11 @@ function addAeroplane(row) {
         if (frameCount % 20 === 0 && takeoffdata < 40) {
           takeoffdata += 5;
           takeoffdata === 40
-            ? ((plane.altitude = 1000),
-              (takeoffdata = 0),
-              (plane.takeoff = false))
+            ? (plane.altitude = 1000,
+              takeoffdata = 0,
+               plane.takeoff = false,
+               socket.emit("get-aeroplane", { airplanes, screenNumber:plane.screen })
+              )
             : null;
         }
         ctx.rotate(degToRad(takeoffdata));
@@ -779,7 +781,6 @@ socket.on("error-popup", (data) => {
   if (screenNumber !== "1") return;
   const errorEl = document.getElementById("error");
   errorEl.textContent = data.error;
-  document.getElementById("errorSound").play();
   if (errorTimeout) {
     clearTimeout(errorTimeout);
   }
