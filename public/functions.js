@@ -391,26 +391,3 @@ export const labelConfig = {
   MIA: { angle: 90, dx: 0 },       
 };
 
-export function getOffsets(screen, width, height, cols, rows, spacing) {
-  const dotAreaWidth = cols * spacing;
-  const dotAreaHeight = rows * spacing;
-
-  const defaultY = Math.max((height - dotAreaHeight) / 2, 30);
-
-  if (screen === 1) {
-    return {
-      x: Math.max((width - dotAreaWidth) / 2, 60),
-      y: defaultY,
-    };
-  } else if (screen === 2) {
-    return {
-      x: 30,
-      y: defaultY,
-    };
-  } else {
-    return {
-      x: width - dotAreaWidth - 30,
-      y: defaultY,
-    };
-  }
-}
