@@ -19,14 +19,16 @@ Now open:
 
     Screens: lg1:3000/1, lg1:3000/2, etc uptill 5 for 5 screen and same for 3.
 
+
 📱 Controlling the Simulator
 
  > Note: if you find that my  rig are not connecting master and error is something related to connection time out  then try flush iptables ->  sudo iptables -F 
 
 Access the controller interface from any device:
 
-
 http://<MASTER_MACHINE_IP>:3000/controller
+
+> please make sure you open controller after all screen get initialize or if you open first you have reload to get all data from all screen for airports position  
 
 Use the Controller to:
 
