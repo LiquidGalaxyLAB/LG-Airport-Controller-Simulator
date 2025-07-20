@@ -102,7 +102,7 @@ io.on("connect", function(socket) {
 
     if(planeData.x === -3){
       var screenEntry = findInArray(allscreenwidth, function(obj) { return obj[3]; });
-      if (screenEntry) {
+      if (screenEntry) { 
         planeData.x = screenEntry[3].data.width;
       }
     }
@@ -125,10 +125,10 @@ io.on("connect", function(socket) {
       }
     }
   
-    if(planeData.x === -4){
-      var screenEntry = findInArray(allscreenwidth, function(obj) { return obj[4]; });
+    if(planeData.x === -1){
+      var screenEntry = findInArray(allscreenwidth, function(obj) { return obj[1]; });
       if (screenEntry) {
-        planeData.x = screenEntry[4].data.width;
+        planeData.x = screenEntry[1].data.width;
       }
     }
   
@@ -199,9 +199,16 @@ io.on("connect", function(socket) {
   });
 
   //callback 
-  socket.on('get-airport-positions', function(callback) {
-    callback(allpostionAirpots); // Send back data only to requester
-  });
+  // socket.on('get-airport-positions', function(callback) {
+  //   callback(allpostionAirpots); // Send back data only to requester
+  // });
+  
+  socket.on('get-airport-positions',function (maybeCallback)  {
+    if (typeof maybeCallback === 'function') {
+      maybeCallback(allpostionAirpots);
+    } else {
+      socket.emit('fetch-airplanes', allpostionAirpots);
+    }})
 
   socket.on("get-aeroplane", function(data) {
     var screenNumber = data.screenNumber;
@@ -284,7 +291,7 @@ io.on("connect", function(socket) {
   //   };
   //   console.log("interval" , data);
   //   io.emit('add-aeroplane', data);
-  // }, 70000);
+  // }, 10000);
 });
 
 server.listen(port, "0.0.0.0", function() {

@@ -513,7 +513,7 @@ function handleTraverseAeroplane(plane, screenNumber) {
       // left → wrap to right
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -3,
+        x: -1,
         screen: 1,
       });
     } else if (screenNumber == 3) {
@@ -614,14 +614,14 @@ function handleTraverseAeroplane5(plane, screenNumber) {
       // right → 1
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -3,
+        x: -1,
         screen: 1,
       });
     } else if (screenNumber == 4) {
       // right → 3
       socket.emit("transfer-aeroplane", {
         ...plane,
-        x: -4,
+        x: -2,
         screen: 2,
       });
     }
