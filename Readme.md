@@ -1,41 +1,50 @@
 # LG_AIRPORT_CONTROLLER_SIMULATOR
+Here's a properly rephrased and polished version of your message:
 
-For node v4.2.6
+---
 
-> There is 2 way 
+**For Node v4.2.6**
 
-> Follow part 1
-1. git clone my repo git clone https://github.com/LiquidGalaxyLAB/LG-Airport-Controller-Simulator.git
+You’ll find a `.zip` file. After unzipping it, if everything is set up correctly, you can directly run the server with the following command:
 
-2. Because npm is too old decerpated we have to install dependenices manually these 2 same version 
+```bash
+node index.js
+```
 
-npm install express@4.13.4
-npm install socket.io@1.4.8
+---
 
-and two open all the chromium you can run open-airport like after navigating bash the type bash open-airport.sh
+**After Server Starts**
 
+Open the following URLs in your browser (replace `lg1` with your rig hostname or IP if needed):
 
-that after start terminal over there and type command node index.js 
+* For 5 screens:
+  `lg1:3001/1`, `lg1:3001/2`, `lg1:3001/3`, `lg1:3001/4`, `lg1:3001/5`
 
-and for 3 screen 3 and for 5 nothing 
+* For 3 screens:
+  `lg1:3001/1`, `lg1:3001/2`, `lg1:3001/3`
 
-eg node index.js 3
+---
 
-it will start server 
+**If You Encounter Connection Issues**
 
-and reload all tabs once 
+If you get an error like:
 
-> Follow part 2
+> "Rigs are not connecting", "Connection refused", or "Connection timed out"
 
-i have add a zip you can unzip and and if all is right you can directly run command node index.js 
+I’ve provided a repair script. Navigate to the `bash` directory and run:
 
---------------------
-after all install complete 
----------------
+```bash
+bash repair.sh
+```
 
-Now open:
+Once you see the success message, you can restart the server with:
 
-    Screens: lg1:3001/1, lg1:3001/2, etc uptill 5 for 5 screen and same for 3.
+```bash
+node index.js
+```
+
+Everything should work smoothly after that.
+
 
 
 📱 Controlling the Simulator
