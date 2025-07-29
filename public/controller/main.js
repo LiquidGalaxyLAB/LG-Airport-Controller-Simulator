@@ -127,13 +127,18 @@ minus.addEventListener("click", () => {
 submit.addEventListener('click', () => {
   previousAltitude = submitdata.altitude;
 
-  if (submitdata.takeoff ) {
-    submitdata.altitude = 1000;
-    // submitdata.takeoff = true;
+  submitdata.altitude = changeAltitude;
 
-  } else {
-    submitdata.altitude = changeAltitude;
+  if (submitdata.isnew && submitdata.altitude === 0 ) {
+    alert('Please increase altitude before takeoff upto 1000 ft ');
+    return;
+  } 
+
+  if(submitdata.isnew && submitdata.altitude > 0  ){
+    submitdata.takeoff = true;
+    submitdata.isnew = false;
   }
+
 
   submitdata.heading = degrees;
   const command = generateCommandSpeechFrom(submitdata, previousAltitude);

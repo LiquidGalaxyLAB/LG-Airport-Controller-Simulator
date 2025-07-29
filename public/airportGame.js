@@ -277,7 +277,7 @@ function addAeroplane(row) {
         const distance = Math.sqrt(dx * dx + dy * dy);
         const conflictThreshold = 50;
 
-        if (distance < conflictThreshold) {
+        if (distance < conflictThreshold  && (a.altitude == b.altitude)) {
           a.conflict = true;
           b.conflict = true;
 
@@ -308,8 +308,12 @@ function addAeroplane(row) {
     }
 
     for (const plane of airplanes) {
+      if((plane.altitude === 0 || plane.altitude === undefined) && plane.isnew) {
+
+      }else{
       plane.x += plane.dx;
       plane.y += plane.dy;
+      }
 
       let transferred;
       if (nScreens == 3) {
@@ -326,7 +330,7 @@ function addAeroplane(row) {
 
       if (plane.conflict) {
         plane.img = airplaneImages.red;
-      } else if (plane.altitude === 0) {
+      } else if (plane.altitude === 0 || plane.takeoff) {
         plane.img = airplaneImages.takeLandOff;
       } else {
         plane.img = airplaneImages.white;
@@ -350,8 +354,7 @@ function addAeroplane(row) {
         if (frameCount % 20 === 0 && takeoffdata < 40) {
           takeoffdata += 5;
           takeoffdata === 40
-            ? (plane.altitude = 1000,
-              takeoffdata = 0,
+            ? (takeoffdata = 0,
                plane.takeoff = false,
                socket.emit("get-aeroplane", { airplanes, screenNumber:plane.screen })
               )
@@ -382,7 +385,17 @@ function addAeroplane(row) {
         const angleRad = degToRad(plane.rotation - 180);
         plane.dx = Math.cos(angleRad) * 0.5;
         plane.dy = Math.sin(angleRad) * 0.5;
+      }  
+      else if (plane.previousAltitude !== plane.altitude && plane.altitude > plane.previousAltitude &&  frameCount % 150 === 0) {
+        plane.previousAltitude = plane.previousAltitude + 1000;
+        console.log("plus",plane.previousAltitude);
       }
+      else if (plane.previousAltitude !== plane.altitude && plane.altitude < plane.previousAltitude &&  frameCount % 150 === 0) {
+        plane.previousAltitude = plane.previousAltitude - 1000;
+        console.log("minus",plane.previousAltitude);
+
+      }
+
 
       //check location
       const destination = plane.destation;
@@ -396,7 +409,7 @@ function addAeroplane(row) {
         airplanes.splice(airplanes.indexOf(plane), 1);
         socket.emit("get-aeroplane", { airplanes, screenNumber });
       }
-      if (plane.heading > 90 && plane.heading < 270 && plane.altitude === 0) {
+      if (plane.heading > 90 && plane.heading < 270 &&  plane.previousAltitude === 0) {
         ctx.scale(1, -1); // Flip vertically to prevent upside down
       }
 
@@ -668,10 +681,12 @@ function postionAeroplane(data) {
     rotation: config.angle,
     selected: false,
     altitude: data.label === "ALT" ? 0 : 1000,
+    previousAltitude:0,
     conflict: false,
-    takeoff: data.label === "ALT" ? true : false,
+    takeoff: false,
     landoff: false,
     rotationstack: [],
+    isnew: data.label === 'ALT' ? true : false,
     heading: 0,
     rotationstackPreview: [],
     destation: data.destation || { label: "WSH", x: 358.5, y: 26.5, screen: 2 },
@@ -801,8 +816,9 @@ function submitPlane(data) {
     plane.altitude = data.altitude;
     plane.selected = false;
     plane.heading = Math.abs(data.heading);
-    // plane.takeoff = data.takeoff;
-
+    plane.takeoff = data.takeoff;
+    plane.isnew = data.isnew;
+    
     socket.emit("update-heading-altitude", {
       heading: plane.heading === 405 ? "HOLD" : plane.heading,
       altitude: plane.altitude,

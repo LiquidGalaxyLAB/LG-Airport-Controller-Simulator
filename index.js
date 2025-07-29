@@ -15,6 +15,9 @@ var mapBuilderFile = "mapbuilder/index.html";
 var controllerFile = "controller/index.html";
 var allpostionAirpots = [];
 var allscreenwidth = [];
+var aeroplaneIntervalId = undefined;
+var isPlaneAdded = false;
+var intervalTime = 5000;
 
 var planes = {
   1: [],
@@ -206,8 +209,11 @@ io.on("connect", function(socket) {
   socket.on('get-airport-positions',function (maybeCallback)  {
     if (typeof maybeCallback === 'function') {
       maybeCallback(allpostionAirpots);
+      console.log('take one ',allpostionAirpots)
+
     } else {
       socket.emit('fetch-airplanes', allpostionAirpots);
+      console.log('take one ',allpostionAirpots)
     }})
 
   socket.on("get-aeroplane", function(data) {
@@ -220,12 +226,12 @@ io.on("connect", function(socket) {
     ) {
       planes[screenNumber] = airplanes;
 
-      console.log("✅ Updated screen " + screenNumber + " with " + airplanes.length + " planes");
-      console.log('📡 Full planes state now:', JSON.stringify(planes, null, 2));
+      console.log(" Updated screen " + screenNumber + " with " + airplanes.length + " planes");
+      console.log('Full planes state now:', JSON.stringify(planes, null, 2));
       
       io.emit("aeroplane-data", planes);
     } else {
-      console.warn("⚠️ Invalid airplane data received");
+      console.warn("Invalid airplane data received");
     }
   });
 
@@ -274,24 +280,49 @@ io.on("connect", function(socket) {
     console.log('User disconnected');
   });
 
-  // Uncomment if needed - converted to Node 4.2.6 compatible syntax
-  // setInterval(function() {
-  //   var sourcedata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
-  //   var destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
   
-  //   if(sourcedata && sourcedata.label === destationdata.label){
-  //      destationdata = allpostionAirpots[Math.floor(Math.random()*allpostionAirpots.length)];
-  //   }
-  //   var data = {
-  //     x: sourcedata.x,
-  //     y: sourcedata.y,
-  //     screen: sourcedata.screen,
-  //     destation: destationdata,
-  //     source: sourcedata,
-  //   };
-  //   console.log("interval" , data);
-  //   io.emit('add-aeroplane', data);
-  // }, 10000);
+  aeroplaneIntervalId = setInterval(function () {
+    if (isPlaneAdded) {
+      console.log("Waiting for 60-second stop...");
+      return;
+    }
+  
+    if (allpostionAirpots.length < 2) {
+      console.log("Not enough airports to create a plane.");
+      return;
+    }
+  
+    var sourcedata = allpostionAirpots[Math.floor(Math.random() * allpostionAirpots.length)];
+    var destationdata = allpostionAirpots[Math.floor(Math.random() * allpostionAirpots.length)];
+  
+    while (destationdata && sourcedata && destationdata.label === sourcedata.label) {
+      destationdata = allpostionAirpots[Math.floor(Math.random() * allpostionAirpots.length)];
+    }
+  
+    if (!sourcedata || !destationdata) {
+      console.log("Invalid airport data. Aborting interval emit.");
+      return;
+    }
+  
+    var data = {
+      x: sourcedata.x,
+      y: sourcedata.y,
+      screen: sourcedata.screen,
+      destation: destationdata,
+      source: sourcedata,
+    };
+  
+    console.log("Adding plane at", new Date().toLocaleTimeString(), data);
+    io.emit('add-aeroplane', data);
+  
+    isPlaneAdded = true;
+    setTimeout(function () {
+      isPlaneAdded = false;
+      console.log("Cooldown finished - planes can be added again");
+    }, 60000); // Cooldown reset in 60 seconds
+  
+  }, intervalTime);
+  
 });
 
 server.listen(port, "0.0.0.0", function() {
