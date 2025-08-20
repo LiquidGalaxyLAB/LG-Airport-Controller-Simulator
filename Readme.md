@@ -78,5 +78,5 @@ Use the Controller to:
     Voice Announcements: Commands are spoken using browser TTS.
 
 
-Thanks to my main mentor vedant  and seconday mentors Rosemarie , prayag And thanks to the team of the Liquid Galaxy LAB Lleida, Headquarters of the Liquid Galaxy project: Alba, Paula, Josep, Jordi, Oriol, Sharon, Alejandro, Marc, and admin Andreu, for their continuous support on my project.
+Thanks to my main mentor vedant  and secondary  mentors Rosemarie Garcia , prayag biswas And thanks to the team of the Liquid Galaxy LAB Lleida, Headquarters of the Liquid Galaxy project: Alba, Paula, Josep, Jordi, Oriol, Sharon, Alejandro, Marc, and admin Andreu, for their continuous support on my project.
 Info in www.liquidgalaxy.eu

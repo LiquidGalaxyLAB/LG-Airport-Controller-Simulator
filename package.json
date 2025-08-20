@@ -4,7 +4,11 @@
   "description": "traffic management",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "nodemon index.js 3",
+    "stop": "pkill -f 'node.*index.js' || echo 'no process found to kill",
+    "restart": "npm run stop && sleep 1 && npm run start",
+    "kill" : "pkill -9 -f 'node.*index.js' || echo 'no process found to force kill"
   },
   "repository": {
     "type": "git",

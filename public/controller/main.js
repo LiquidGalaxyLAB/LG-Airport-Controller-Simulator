@@ -14,6 +14,9 @@ const plus = document.getElementById('plus');
 const minus = document.getElementById('minus'); 
 const commandElement = document.getElementById('command'); 
 const playerror = document.getElementById('errorSound');
+const startBtn = document.getElementById('start');
+const stopBtn = document.getElementById('stop');
+const pauseBtn = document.getElementById('pause');
 let airportPositions = []
 let airplones = [];
 let submitdata = {};
@@ -91,6 +94,8 @@ let previousAltitude;
 
 // LEFT turn logic
 function fleft() {
+  // socket.emit('gameStop', submitdata);
+
   if (degrees === -405) return;
   degrees -= 45;
   handleCommandPreview();
@@ -101,16 +106,21 @@ left.addEventListener('click', fleft);
 
 // RIGHT turn logic
 function fright() {
+  // socket.emit('gameStart', submitdata);
+
   if (degrees === 405) return;
   degrees += 45;
   handleCommandPreview();
   socket.emit('update-plane-right');
   console.log('direction: RIGHT');
+
 }
 right.addEventListener('click', fright);
 
 // Altitude increase
 plus.addEventListener("click", () => {
+  // socket.emit('gamePause', submitdata);
+
   if (changeAltitude === 5000) return;
   changeAltitude += 1000;
   handleCommandPreview();
@@ -153,6 +163,20 @@ submit.addEventListener('click', () => {
   console.log('submitted data:', submitdata);
 });
 
+startBtn.addEventListener('click', () => {
+  socket.emit('gameStart', submitdata);
+  console.log('Game Started');
+});
+
+stopBtn.addEventListener('click', () => {
+  socket.emit('gameStop', submitdata);
+  console.log('Game Stopped');
+});
+
+pauseBtn.addEventListener('click', () => {
+  socket.emit('gamePause', submitdata);
+  console.log('Game Paused');
+});
 // Preview updated command (without submission)
 function handleCommandPreview() {
   const simulatedAltitude = changeAltitude;

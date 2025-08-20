@@ -15,8 +15,12 @@
         canvas {
             padding-left: 0;
             padding-right: 0;
-            margin-bottom: 20px;
+            /* padding-top:10px ; */
+            /* padding-bottom: 10px; */
+            /* padding: 10px; */
+            /* margin-top: 10px; */
             /* margin-top:140px; */
+            /* position: relative; */
             display: block;
             font-family: "Inter", sans-serif;
         }
@@ -24,7 +28,7 @@
         html,
         body {
             margin: 0px;
-            overflow: hidden;
+            /* overflow: hidden; */
             background: #071225;
             font-family: "Inter", sans-serif;
         }
@@ -33,15 +37,15 @@
             font-family: "Inter";
             display: flex;
             flex-direction: column;
-            gap: 15px;
             margin: 20px;
-            margin-bottom: 0px ;
+            margin-bottom: 10px ;
             /* align-items: center; */
             /* justify-content: center; */
         }
         #time {
             text-align: center;
             color: #00D5FF;
+            padding-bottom: 15px;
             font-size: clamp(1em, 2.5vw, 2em);
         }
 
@@ -56,7 +60,7 @@
             font-size: clamp(1em, 2.5vw, 2em);
             text-align: center;
         }
-        
+       
         .infobar{
             display: flex;
             flex-direction: row;
@@ -71,21 +75,90 @@
             color: #FFFFFF;
         }
         .errorData{
-            /* position: absolute; */
-            /* margin-top:13%; */
             text-align: center;
             color: #FF0000;
+            opacity: 0;
             font-size: clamp(1em, 2.5vw, 2em);
+        } 
+        .succesData{
+            text-align: center;
+            color: #00ff11;
+            opacity: 0;
+            font-size: clamp(1em, 2.5vw, 2em);
+        }
+        .just-info{
+            text-align: center;
+            color: white;
+            font-size: clamp(1em, 2.5vw, 2em);
+        }
+        .container-screen {
+            font-family: "Inter";
+            display: flex;
+            flex-direction: row;
+            margin: 20px;
+            margin-bottom: 10px ;
+            align-items: center;
+        }
+        .scoreBoard{
+            font-size: 30px;
+            display: flex;
+            justify-content: space-between;
         }
     </style>
 </head>
 
 <body>
-    <!-- <div style="color: white; text-align: center; font-size: 50px;">GALAXY PACMAN</div> -->
-    <div id="center-text"></div>
+    <div style="position: relative;">
+    <div id="gameover" style="position:absolute; color:white; text-align: center; top: 15%; left:25%; font-size: 50px; display: none;">
+        <div>GAME OVER</div>
+        <div class="scoreBoard">Score: <div id="scoreID"> 0</div></div>
+        <div class="scoreBoard">Crashes : <div id="confilct">0</div> </div>
+        <div class="scoreBoard">Wrong Exit: <div id="wrong">0</div> </div>
+        <div class="scoreBoard">Bad Depature : <div id="bad">0</div> </div>
+    </div>
+
+    <div class="logo" id="mainlogo" style="position:absolute; color:white; top: 20%; display: none; ">
+        <img src="./main_logo (1).png" alt="Logo" style="width: 50%; height: 50%; float: right;  ">
+    </div>
+
+    <div id="center-text" class="center-text" style=" display: none;">
+        <div id="time">00:00</div>
+        <div id="command">Command</div><div id="error" class="errorData"></div>
+    </div>
+   
+    <div id="screen-text3" class="container-screen" style="display: none; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div id="sourcemain" class="infobar"><div id="source" class="infobar-label">Source: </div><div id="origin" class="infobar-data">---</div></div> 
+            <div id="sourcemain" class="infobar"><div id="source" class="infobar-label">Destination: </div><div id="destination" class="infobar-data">---</div></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 15px; ">
+            <div id="sourcemain" class="infobar"><div id="source" class="infobar-label">Heading: </div><div id="headingData" class="infobar-data">---</div></div> 
+            <div id="sourcemain" class="infobar"><div id="source" class="infobar-label">Altitude: </div><div id="altitudeData" class="infobar-data">---</div></div>
+        </div>
+    </div>
+    <div id="screen-text2" class="container-screen" style="display: none; justify-content: center;" >
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div><div id="errorID" class="errorData">Wrong Exit </div></div> 
+            <div><div id="successID" class="succesData">PLane reached Destination </div></div>
+        </div>
+    </div>
+
+    <div id="screen-text4" class="container-screen" style="display: none; justify-content: center;" >
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div><div id="just-info" class="just-info">Google Summer Of Code 2025 </div></div> 
+            <div><div id="just-info" class="just-info">Liquid Galaxy Project </div></div>
+        </div>
+    </div>
+
+    <div id="screen-text5" class="container-screen" style="display: none; justify-content: center;" >
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div><div id="errorID" class="just-info">Project Name: LG-Airport-Controller-Simulator </div></div> 
+            <div><div id="successID" class="just-info">Contributor : Dev T Gadani </div></div>
+        </div>
+    </div>
 
     <canvas id="gameCanvas" >Canvas not supported by browser</canvas>
-
+</div>
 </body>
 <!-- <script src="./js/howler.min.js"></script> -->
 <script src="/socket.io/socket.io.js"></script>

@@ -1,4 +1,4 @@
- export function generateMasterMap(rows, cols) {
+export function generateMasterMap(rows, cols) {
   const map = [];
   const middleRow = Math.floor(rows / 2);
 
@@ -117,7 +117,7 @@ middle: "ALT",
 
   for (let row = 0; row < rows; row++) {
     const rowData = new Array(cols).fill(0);
-    const offset = row; // 👈 changed from Math.abs(centerRow - row)
+    const offset = row; 
     if (row < cols && row <= centerCol) {
       rowData[row] = 1;
     }
@@ -253,7 +253,7 @@ middle: "ALT",
 </svg>
 `
 
- export const TOP_OFFESET = 70;
+ export const TOP_OFFESET = 150;
 
  export const airplanes = []
  export const offsetX = 0 //offsetX
@@ -261,120 +261,51 @@ middle: "ALT",
 
 
  export  function infobar (container){
-  const time = document.createElement("div");
-  time.id = "time";
-  time.textContent = '10.10.10';
-
-  const command = document.createElement("div");
-  command.id = "command";
-  command.textContent = "Command"
-
-
-  const error = document.createElement("div");
-  error.id = "error";
-  error.className = "errorData";
-  error.textContent = "";
-  container.appendChild(time);
-  container.appendChild(command);
-  container.appendChild(error);
-  updateTimer(); 
+  
 }
 
 
 let totalSeconds = 0;
+export var isGameOver = false;
 
+export let isPause = false;
+export let isStopped = false;
 export  function updateTimer() {
+  if(isPause) return;
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   document.getElementById('time').textContent = `${minutes}:${seconds}`;
   totalSeconds++; // keep incrementing forever
+  if(totalSeconds === 20){
+    isGameOver = true;
+    clearInterval(timerInterval);
+  }
 }
+var timerInterval ;
+export function startTimer(){
+  isPause = false;
+  isStopped = false;
+  isGameOver = false;
 
-const timerInterval = setInterval(updateTimer, 1000);
-
-
- export  function infobar2 (container,dispaly){
-  const sourcemain = document.createElement("div"); 
-  sourcemain.id = "sourcemain";
-  sourcemain.className = "infobar";
-  const source = document.createElement("div");
-  source.id = "source";
-  source.textContent = "Source: ";
-  source.className = "infobar-label";
-
-  const origin = document.createElement("div");
-  origin.id = "origin";
-  origin.textContent = "ALT";
-  origin.className = "infobar-data";
-
-
-  const destmain = document.createElement("div");
-  destmain.id = "destmain";
-  destmain.className = "infobar";
-
-  const dest = document.createElement("div");
-  dest.id = "dest";
-  dest.textContent = "Dest: ";
-  dest.className = "infobar-label";
-
-  const destination = document.createElement("div"); 
-  destination.id = "destination";
-  destination.textContent = "MIA";
-  destination.className = "infobar-data"; 
-
- 
-  sourcemain.appendChild(source);
-  sourcemain.appendChild(origin);
-  destmain.appendChild(dest);
-  destmain.appendChild(destination);
-  sourcemain.style.opacity = dispaly === 'none' ? 0 : 1
-  destmain.style.opacity = dispaly === 'none' ? 0 : 1
-  container.appendChild(sourcemain);
-  container.appendChild(destmain);
+  updateTimer();
+  
+  timerInterval = setInterval(updateTimer, 1000);
 }
-
-
- export  function infobar3 (container,dispaly){
-  const headingMain = document.createElement("div"); 
-  headingMain.className = "infobar";
-
-  const heading = document.createElement("div");
-  heading.id = "heading";
-  heading.textContent = "Heading: ";
-  heading.className = "infobar-label";
-
-  const headingData = document.createElement("div");
-  headingData.id = "headingData";
-  headingData.textContent = "225";
-  headingData.className = "infobar-data";
-
-  const altitudeMain = document.createElement("div");
-  altitudeMain.className = "infobar";
-
-  const altitude = document.createElement("div");
-  altitude.id = "altitude";
-  altitude.textContent = "Altitude: ";
-  altitude.className = "infobar-label";
-
-  const altitudeData = document.createElement("div");
-  altitudeData.id = "altitudeData";
-  altitudeData.textContent = "4000";
-  altitudeData.className = "infobar-data";
-
-
-  headingMain.appendChild(heading);
-  headingMain.appendChild(headingData);
-  altitudeMain.appendChild(altitude);
-  altitudeMain.appendChild(altitudeData);
-  headingMain.style.opacity = dispaly === 'none' ? 0 : 1
-  altitudeMain.style.opacity = dispaly === 'none' ? 0 : 1
-  container.appendChild(headingMain);
-  container.appendChild(altitudeMain);
+export function pauseTimer(){
+  clearInterval(timerInterval);
+  isPause = true;
 }
-
-
-
-
+export function resumeTimer(){
+  isPause = false;
+  isStopped = false;
+}
+export function stopTimer(){
+  isPause = false;
+  clearInterval(timerInterval);
+  isStopped = true;
+  document.getElementById('time').textContent = `00:00`;
+  totalSeconds = 0;
+}
  export const labelConfig = {
   ALT: { angle: 0, dx: 0 },         
 
@@ -392,3 +323,44 @@ const timerInterval = setInterval(updateTimer, 1000);
 };
 
 
+// Function to check if plane is near a grid intersection
+export function rotationongrid(plane) {
+  if (plane.rotationstack.length === 0) return false;
+  return !!plane.isondot;
+}
+
+
+export function areMovingTowardsEachother(a, b) {
+  // Check if velocity properties exist
+  if (a.dx === undefined || a.dy === undefined || b.dx === undefined || b.dy === undefined) {
+    console.log('Missing velocity data:', {
+      a: { dx: a.dx, dy: a.dy },
+      b: { dx: b.dx, dy: b.dy }
+    });
+    return false;
+  }
+
+  const vectorAtoB = {
+    x: b.x - a.x,
+    y: b.y - a.y
+  };
+ 
+  const vectorBtoA = {
+    x: a.x - b.x,
+    y: a.y - b.y
+  };
+ 
+  const dotProductA = (a.dx * vectorAtoB.x) + (a.dy * vectorAtoB.y);
+  const dotProductB = (b.dx * vectorBtoA.x) + (b.dy * vectorBtoA.y);
+ 
+  console.log('Movement check:', {
+    planes: `${a.label}-${b.label}`,
+    aVelocity: { dx: a.dx, dy: a.dy },
+    bVelocity: { dx: b.dx, dy: b.dy },
+    dotProductA,
+    dotProductB,
+    movingTowards: dotProductA > 0 && dotProductB > 0
+  });
+
+  return dotProductA > 0 && dotProductB > 0;
+}
