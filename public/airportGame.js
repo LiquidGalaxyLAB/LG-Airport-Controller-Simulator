@@ -66,6 +66,7 @@ socket.on('reconnect', () => {
 
 
 
+
 const HEIGHT = window.innerHeight - TOP_OFFESET;
 const WIDTH = window.innerWidth - 10;
 const labelPositions = [];
@@ -369,6 +370,7 @@ let characters = 65;
 let previousConflicts = new Set();
 const previousWarnings = new Set();
 const planecheckWarnings = 5000;
+
 function addAeroplane(row) {
   const map = row.map;
 
@@ -405,33 +407,33 @@ function addAeroplane(row) {
       plane.conflict = false;
     }
 
-    // Check all pairs for conflict
+    // Standard conflict detection for current screen only
     for (let i = 0; i < airplanes.length; i++) {
       for (let j = i + 1; j < airplanes.length; j++) {
         const a = airplanes[i];
         const b = airplanes[j];
 
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const conflictThreshold = 50;
-        const warningThreshold = 250;
+        const distance = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+        const conflictThreshold = 35;
+        const warningThreshold = 150;
         
-        const currentTime = Date.now();
-
         const pairKey = [a.label, b.label].sort().join("-");
         
+        // Check if planes are in warning zone (turn red but don't crash yet)
         if (
           distance < warningThreshold &&
           distance >= conflictThreshold &&
-          a.altitude === b.altitude
-          && areMovingTowardsEachother(a, b)
+          a.altitude === b.altitude &&
+          areMovingTowardsEachother(a, b)
         ) {
+          // Set conflict flag to make planes turn red
+          a.conflict = true;
+          b.conflict = true;
+          
           newWarnings.add(pairKey);
          
           if (!previousWarnings.has(pairKey)) {
             previousWarnings.add(pairKey);
-            console.log('warning for', pairKey);
             socket.emit("error-popup", {
               error: `Warning: ${a.label} and ${b.label} are too close.`,
               warning: `Warning: ${a.label} and ${b.label} are too close.`,
@@ -440,30 +442,20 @@ function addAeroplane(row) {
           }
         }
 
+        // Check for actual crash (remove planes)
         if (distance < conflictThreshold && (a.altitude == b.altitude)) {
-          a.conflict = true;
-          b.conflict = true;
-          
-          // Alert if this conflict is new
           if (!previousConflicts.has(pairKey)) {
             socket.emit("error-popup", {
               conflict: true,
               error: `Crash between planes ${a.label} and ${b.label}`,
             });
-           
+            
             const indexA = airplanes.indexOf(a);
             const indexB = airplanes.indexOf(b);
-            
-            if (indexA > indexB) {
-              airplanes.splice(indexA, 1); 
-              airplanes.splice(indexB, 1); 
-            } else {
-              airplanes.splice(indexB, 1); 
-              airplanes.splice(indexA, 1);
-             }
-            
+            airplanes.splice(indexA, 1);
+            airplanes.splice(indexB > indexA ? indexB - 1 : indexB, 1);
+            socket.emit("get-aeroplane", { airplanes, screenNumber });
             previousConflicts.add(pairKey);
-            
             break;
           }
           newConflicts.add(pairKey);
@@ -924,6 +916,7 @@ function setLastoffSettrackingandSpeedDirection(plane) {
 
 // Listen for 'add-aeroplane' event and create the plane
 socket.on("add-aeroplane", postionAeroplane);
+
 function updatePlane(data) {
   const plane = airplanes.find((p) => p.selected === true);
   if (!plane) return;
@@ -1006,6 +999,9 @@ socket.on("update-heading-altitude", (data) => {
 let errorTimeout;
 socket.on("error-popup", (data) => {
   console.log(data);
+  if(data.warning){
+    errorData.style.color = "yellow"; 
+  }
   errorData.textContent = data.error;
   errorData.style.opacity = 1;
   if (errorTimeout) {
@@ -1013,6 +1009,7 @@ socket.on("error-popup", (data) => {
   }
   errorTimeout = setTimeout(() => {
     errorData.style.opacity = 0;
+    errorData.style.color = "FF0000"; 
     errorTimeout = null; // Reset reference
   }, 5000);
   return;
@@ -1098,8 +1095,8 @@ gameOversend = false;
   gameover.style.display = "none";
   resumeTimer();
   if(screenNumber !== "1") return;
- startTimer();
-
+  startTimer();
+  
 });
 
 socket.on('gameStopData', (reason) => {
@@ -1159,6 +1156,8 @@ function handlereset() {
 }
 
 
+
+
 let heartbeatInterval;
 
 function startHeartbeat() {
@@ -1185,3 +1184,4 @@ function stopHeartbeat() {
 }
 
 startHeartbeat();
+

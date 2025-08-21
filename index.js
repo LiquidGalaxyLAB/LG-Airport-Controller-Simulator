@@ -491,63 +491,65 @@ isplaneAdded = false;
 },4000);
 }
 
+
 function gneratetakeoffPlanes(allAirports) {
-    const planes = [];
-  
-    if (allAirports.length < 8) {
-      console.log("Not enough airports to generate data.");
-	// setTimeout(() => { gneratetakeoffPlanes(allAirports);},5000);
-      return ;
+  const planes = [];
+
+  if (allAirports.length < 8) {
+    console.log("Not enough airports to generate data.");
+  // setTimeout(() => { gneratetakeoffPlanes(allAirports);},5000);
+    return ;
+  }
+
+  const source = allAirports.find((a) => a.label === 'ALT');
+  if (!source) {
+    console.log("No ALT-labeled airport found for source.");
+    return planes;
+  }
+
+  const usedDestinations = new Set();
+  var attempts = 0;
+  const maxAttempts = 50; // prevent infinite loop
+
+  while (planes.length < 5 && attempts < maxAttempts) {
+    attempts++;
+
+    const destination = allAirports[Math.floor(Math.random() * allAirports.length)];
+
+    if (
+      !destination ||
+      destination.label === source.label || // skip if same as ALT
+      usedDestinations.has(destination.label)
+    ) {
+      continue;
     }
-  
-    const source = allAirports.find((a) => a.label === 'ALT');
-    if (!source) {
-      console.log("No ALT-labeled airport found for source.");
-      return planes;
-    }
-  
-    const usedDestinations = new Set();
-    var attempts = 0;
-    const maxAttempts = 50; // prevent infinite loop
-  
-    while (planes.length < 5 && attempts < maxAttempts) {
-      attempts++;
-  
-      const destination = allAirports[Math.floor(Math.random() * allAirports.length)];
-  
-      if (
-        !destination ||
-        destination.label === source.label || // skip if same as ALT
-        usedDestinations.has(destination.label)
-      ) {
-        continue;
-      }
-  
-      usedDestinations.add(destination.label);
-  
-      planes.push({
+
+    usedDestinations.add(destination.label);
+
+    planes.push({
+      x: source.x,
+      y: source.y,
+      screen: source.screen,
+      source: {
+        label: source.label,
         x: source.x,
         y: source.y,
         screen: source.screen,
-        source: {
-          label: source.label,
-          x: source.x,
-          y: source.y,
-          screen: source.screen,
-        },
-        destination: {
-          label: destination.label,
-          x: destination.x,
-          y: destination.y,
-          screen: destination.screen,
-        },
-      });
-    }
-  
-    if (planes.length < 5) {
-      console.warn(`Only ${planes.length} unique takeoff planes could be generated.`);
-    }
-  	
-    return planes;
+      },
+      destination: {
+        label: destination.label,
+        x: destination.x,
+        y: destination.y,
+        screen: destination.screen,
+      },
+    });
   }
+
+  if (planes.length < 5) {
+    console.warn(`Only ${planes.length} unique takeoff planes could be generated.`);
+  }
+  
+  return planes;
+}
+
   
