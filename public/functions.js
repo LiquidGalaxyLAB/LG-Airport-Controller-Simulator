@@ -275,8 +275,8 @@ export  function updateTimer() {
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   document.getElementById('time').textContent = `${minutes}:${seconds}`;
-  totalSeconds++; // keep incrementing forever
-  if(totalSeconds === 20){
+  totalSeconds++; 
+  if(totalSeconds === 240){
     isGameOver = true;
     clearInterval(timerInterval);
   }
