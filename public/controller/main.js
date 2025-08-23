@@ -63,7 +63,7 @@ socket.on('all-airport-positions', (data) => {
             submitdata = airplane;
             changeAltitude = airplane.altitude;
             degrees = airplane.heading;
-            socket.emit('select-plane', airplane.label);
+            socket.emit('select-plane',{dir : airplane.label , altitude: airplane.altitude});
             handleCommandPreview();
           });
           
