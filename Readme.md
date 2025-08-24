@@ -120,18 +120,12 @@ Their continuous support, expertise, and dedication made this project possible.
 The following repositories were instrumental in the development of this project:
 
 ### Core Technologies
-- **Node.js Official Documentation**: [https://nodejs.org/docs/](https://nodejs.org/docs/)
-- **Socket.IO Documentation**: [https://socket.io/docs/](https://socket.io/docs/)
-- **Flutter Official Repo**: [https://github.com/flutter/flutter](https://github.com/flutter/flutter)
-
 ### Liquid Galaxy Resources
 - **Liquid Galaxy Scripts**: [https://github.com/LiquidGalaxyLAB/liquid-galaxy](https://github.com/LiquidGalaxyLAB/liquid-galaxy)
-- **LG Controller**: [https://github.com/LiquidGalaxyLAB/lg_controller](https://github.com/LiquidGalaxyLAB/lg_controller)
 
 ### Reference Projects
-- **Air Traffic Control Simulations**: Various open-source ATC projects that provided inspiration for UI/UX design
-- **WebSocket Communication Examples**: Reference implementations for real-time communication patterns
-- **Flutter Mobile App Templates**: Base structures for mobile controller applications
+- **Galaxy Pacman**: [project that gave reference to screen management](https://github.com/LiquidGalaxyLAB/galaxy-pacman)
+- **LG RetroGaming**: [Give understanding for screen number as in head LG lab ](https://github.com/LiquidGalaxyLAB/lg-retro-gaming)
 
 *Note: Specific repository links for reference projects can be added based on the actual repositories used during development.*
 
