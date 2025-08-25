@@ -120,16 +120,23 @@ Their continuous support, expertise, and dedication made this project possible.
 
 ## Gallery 
 ![game1](./images/game1.png)
+
 ![game2](./images/game2.png)
+
 ![game3](./images/game3.png)
+
 ![game4](./images/game4.png)
+
 ![game5](./images/game5.png)
+
 ![game6](./images/game6.png)
-------
-![controller](./images/1.webp)
-![controller](./images/2.webp)
-![controller](./images/3.webp)
-![controller](./images/4.png)
+
+<div align="center">
+  <img src="./images/1.webp" alt="1" width="200" height="400">
+  <img src="./images/2.webp" alt="2" width="200" height="400">
+  <img src="./images/3.webp" alt="3" width="200" height="400">
+  <img src="./images/4.png" alt="4" width="200" height="400">
+</div>
 
 ## Demo Day 
 
