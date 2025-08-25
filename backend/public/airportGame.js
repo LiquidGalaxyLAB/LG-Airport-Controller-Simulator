@@ -923,7 +923,7 @@ function selectPlane(data) {
     socket.emit("update-heading-altitude", {
       heading: plane.heading,
       altitude: plane.altitude || 1000,
-      screen: nScreens == 3 ? "3" : "5",
+      screen: nScreens == 3 ? "2" : "4",
     });
     plane.selected = true;
     console.log(`Selected plane: ${plane.label}`);
@@ -977,7 +977,7 @@ function submitPlane(data) {
     socket.emit("update-heading-altitude", {
       heading: plane.heading === 405 ? "HOLD" : plane.heading,
       altitude: plane.altitude,
-      screen: nScreens == 3 ? "3" : "5",
+      screen: nScreens == 3 ? "2" : "4",
     });
     const scr = plane.screen;
     airplanes.forEach((p) =>
@@ -1120,14 +1120,37 @@ socket.on("cross-screen-conflict", (data) => {
 });
 
 socket.on("deselect-plane", (data) => {
-  console.log("Deselecting plane", data);
   const plane = airplanes.find((plane) => plane.label === data.label);
-  if (plane) {
-    plane.selected = false;
-    plane.rotationstackPreview = [];
-    socket.emit("get-aeroplane", { airplanes, screenNumber });
+
+if (plane) {
+  // Preserve the current altitude and other important properties
+  const currentAltitude = plane.altitude;
+  const currentPreviousAltitude = plane.previousAltitude;
+  
+  plane.selected = false;
+  plane.rotationstackPreview = [];
+  
+  // Make sure altitude values are preserved
+  if (currentAltitude !== undefined && currentAltitude !== null) {
+    plane.altitude = currentAltitude;
   }
+  if (currentPreviousAltitude !== undefined && currentPreviousAltitude !== null) {
+    plane.previousAltitude = currentPreviousAltitude;
+    plane.altitude = data.altitude;
+
+  }
+  
+  socket.emit("get-aeroplane", { airplanes, screenNumber });
+}
+//   console.log("Deselecting plane", data);
+//   const plane = airplanes.find((plane) => plane.label === data.label);
+//   if (plane) {
+//     plane.selected = false;
+//     plane.rotationstackPreview = [];
+//     socket.emit("get-aeroplane", { airplanes, screenNumber });
+//   }
 });
+
 
 socket.on("gameResetData", handlereset);
 

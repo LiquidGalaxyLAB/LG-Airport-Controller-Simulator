@@ -29,7 +29,6 @@ class AboutPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Section
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -44,7 +43,6 @@ class AboutPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Profile Avatar
                   Container(
                     width: 120,
                     height: 120,
@@ -86,7 +84,6 @@ class AboutPage extends StatelessWidget {
               ),
             ),
 
-            // About Me Section
             _buildSection(
               context: context,
               title: 'About Me',
@@ -98,16 +95,6 @@ class AboutPage extends StatelessWidget {
                     label: 'Passion',
                     value: 'Contribution to Open source projects and Creating innovative applications with Flutter',
                   ),
-                  // _buildInfoRow(
-                  //   context: context,
-                  //   label: 'Expertise',
-                  //   value: 'Flutter Development, UI/UX Design, System Integration',
-                  // ),
-                  // _buildInfoRow(
-                  //   context: context,
-                  //   label: 'Focus',
-                  //   value: 'Building seamless user experiences and robust applications',
-                  // ),
                   SizedBox(height: 16),
                   Text(
                     'Dedicated to crafting high-quality mobile applications that solve real-world problems. '
@@ -123,32 +110,6 @@ class AboutPage extends StatelessWidget {
               ),
             ),
 
-            // Project Highlights
-            // _buildSection(
-            //   context: context,
-            //   title: 'Project Highlights',
-            //   content: Column(
-            //     children: [
-            //       _buildProjectHighlight(
-            //         context: context,
-            //         title: 'LG Airport Simulator',
-            //         description: 'Advanced Flutter application with real-time connectivity and immersive simulation features',
-            //       ),
-            //       _buildProjectHighlight(
-            //         context: context,
-            //         title: 'Theme System Implementation',
-            //         description: 'Comprehensive dark/light theme system with persistent user preferences',
-            //       ),
-            //       _buildProjectHighlight(
-            //         context: context,
-            //         title: 'Socket Integration',
-            //         description: 'Real-time communication system for Liquid Galaxy integration',
-            //       ),
-            //     ],
-            //   ),
-            // ),
-
-            // Mentor Appreciation Section
             Container(
               margin: EdgeInsets.all(24),
               padding: EdgeInsets.all(32),
@@ -162,11 +123,6 @@ class AboutPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Icon(
-                  //   Icons.favorite,
-                  //   size: 48,
-                  //   color: context.connectionErrorColor, // Using theme color for accent
-                  // ),
                   SizedBox(height: 24),
                   Text(
                     'Special Thanks',

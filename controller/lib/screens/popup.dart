@@ -543,10 +543,6 @@ class BottomPopup extends StatelessWidget {
             ),
           ),
 
-
-        // getTypeIcon(),
-        // const SizedBox(height: 20),
-
         Text(
           data.title,
           style: TextStyle(
@@ -641,7 +637,6 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
   void _startCountdown() async {
     for (int i = 5; i >= 1; i--) {
       setState(() {
-        // _countdown = i;
         _isProcessing = true;
         switch (i) {
           case 5:
@@ -719,7 +714,6 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
     try {
       switch (countdownNumber) {
         case 5:
-          // Start LG Airport server
           setState(() {
             _currentMessage = 'Starting LG Airport server...'.tr();
           });
@@ -737,7 +731,6 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
           break;
           
         case 4:
-          // Launch Chrome
           setState(() {
             _currentMessage = 'Opening Chrome...'.tr();
           });
@@ -746,7 +739,6 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
           break;
           
         case 3:
-          // Connect to socket and fetch airplanes
           setState(() {
             _currentMessage = 'Connecting to socket...'.tr();
           });
@@ -754,23 +746,16 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
           break;
           
         case 2:
-          // Verify configuration
           setState(() {
             _currentMessage = 'Checking server config...'.tr();
           });
           
-          // final gameStarted = await widget.socketService.startGame();
-          // if (!gameStarted) {
-            // return false;
-          // }
           break;
           
         case 1:
-          // Start game
           setState(() {
             _currentMessage = 'Server is ready. You can now start the game'.tr();
           });
-          // await widget.socketService.verifyServerConfiguration();
           await Future.delayed(Duration(seconds: 1));
           break;
       }
@@ -801,9 +786,9 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
           return;
         }
       }
-      _attempt = 2; // Retry failed
+      _attempt = 2;
     } catch (e) {
-      _attempt = 2; // Retry failed
+      _attempt = 2;
     }
   }
 
@@ -844,34 +829,6 @@ class _CountdownPopupState extends State<CountdownPopup> with TickerProviderStat
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              // AnimatedBuilder(
-              //   animation: _scaleAnimation,
-              //   builder: (context, child) {
-              //     return Transform.scale(
-              //       scale: _scaleAnimation.value,
-              //       child: Container(
-              //         width: 80,
-              //         height: 80,
-              //         decoration: BoxDecoration(
-              //           color: Colors.blue,
-              //           shape: BoxShape.circle,
-              //         ),
-              //         child: Center(
-              //           child: Text(
-              //             '',
-              //             style: const TextStyle(
-              //               fontSize: 36,
-              //               fontWeight: FontWeight.bold,
-              //               color: Colors.white,
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     );
-              //   },
-              // ),
-              // const SizedBox(height: 16),
               Text(
                 _currentMessage,
                 style: TextStyle(
@@ -1190,15 +1147,6 @@ class _SimpleCountdownPopupState extends State<SimpleCountdownPopup> with Ticker
                   );
                 },
               ),
-              // const SizedBox(height: 16),
-              // Text(
-              //   'Starting in $_countdown seconds...',
-              //   style: TextStyle(
-              //     fontSize: 16,
-              //     color: Colors.grey[600],
-              //   ),
-              //   textAlign: TextAlign.center,
-              // ),
             ],
           ),
         ),
@@ -1387,7 +1335,6 @@ class PopupDemo extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              // onPressed: () => showGameOverPopup(context),
               onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -1419,15 +1366,6 @@ class PopupDemo extends StatelessWidget {
   }
 
   void showSuccessPopup(BuildContext context) {
-    // BottomPopup.showSuccess(
-    //   context: context,
-    //   title: "Successfully Completed".tr(),
-    //   subtitle: "Your action was completed successfully".tr(),
-    //   enableGlassEffect: false,
-    //   onClose: () {
-    //     print("Success popup closed");
-    //   },
-    // );
   }
 
   void showInfoPopup(BuildContext context) {
@@ -1478,23 +1416,4 @@ class PopupDemo extends StatelessWidget {
     );
   }
 
-  // void showGameOverPopup(BuildContext context) {
-  //   BottomPopup.showGameOver(
-  //     context: context,
-  //     title: "Game Over.tr()",
-  //     score: 123,
-  //     conflicts: 5,
-  //     wrongExits: 3,
-  //     correctExits: 9,
-  //     onRestart: () {
-  //       print("Game Over Popup Restart pressed");
-  //       Navigator.of(context).pop();
-  //     },
-  //     onMainMenu: () {
-  //       print("Game Over Popup Main Menu pressed");
-  //       Navigator.of(context).pop();
-  //     },
-  //     enableGlassEffect: false,
-  //   );
-  // }
 }

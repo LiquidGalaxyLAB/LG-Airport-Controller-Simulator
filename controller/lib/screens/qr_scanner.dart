@@ -20,14 +20,14 @@ class QRScannerPage extends StatefulWidget {
 class _QRScannerPageState extends State<QRScannerPage> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   final SocketService _socketService = SocketService();
-  
+
   Barcode? result;
   QRViewController? controller;
   bool isFlashOn = false;
   bool isProcessing = false;
   Timer? _connectionTimeout;
   bool _hasShownResult = false;
-  final SSH ssh = SSH(); 
+  final SSH ssh = SSH();
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   void _onSocketServiceChanged() {
     if (_hasShownResult || !isProcessing) return;
-    
+
     if (_socketService.isConnected) {
       _hasShownResult = true;
       _connectionTimeout?.cancel();
@@ -56,7 +56,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
       _dismissLoadingAndShowFailure();
     }
   }
-  
+
   @override
   void reassemble() {
     super.reassemble();
@@ -65,12 +65,12 @@ class _QRScannerPageState extends State<QRScannerPage> {
       controller!.resumeCamera();
     }
   }
-  
+
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) async {
       if (isProcessing) return;
-      
+
       setState(() {
         result = scanData;
         if (result != null && result!.code != null) {
@@ -84,65 +84,55 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   void _processQRData(String data) async {
     try {
-      // Pause camera to prevent multiple scans
       controller?.pauseCamera();
-      
-      // Validate input data
+
       if (data.isEmpty || data.trim().isEmpty) {
         throw Exception('QR code is empty');
       }
-      
+
       print('Processing QR data: $data');
-      
-      // Show loading indicator
+
       _showLoadingDialog();
-      
-      // Set up timeout for connection attempt (30 seconds)
+
       _connectionTimeout = Timer(Duration(seconds: 30), () {
         if (isProcessing && !_hasShownResult) {
           _hasShownResult = true;
           _dismissLoadingAndShowTimeout();
         }
       });
-      
-      // Parse the QR code data with better error handling
+
       Map<String, dynamic> settings;
       try {
         settings = jsonDecode(data.trim());
       } catch (jsonError) {
         throw Exception('Invalid QR code format. Expected JSON format.');
       }
-      
-      // Validate required fields more thoroughly
+
       if (settings.isEmpty) {
         throw Exception('QR code contains no settings');
       }
-      
-      if (!settings.containsKey('ip') || 
-          settings['ip'] == null || 
+
+      if (!settings.containsKey('ip') ||
+          settings['ip'] == null ||
           settings['ip'].toString().trim().isEmpty) {
         throw Exception('Invalid QR code: Missing IP address');
       }
-      
-      // Validate IP format (basic check)
+
       String ip = settings['ip'].toString().trim();
       if (!RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(ip)) {
         throw Exception('Invalid IP address format');
       }
-      
+
       print('Settings parsed successfully: $settings');
-      
-      // Save the settings
+
       await _saveSettings(settings);
-      
+
       print('Attempting to connect to: $ip');
-     
-      // Connect using SSH
+
       final success = await ssh.connectToLG();
-      
-      // Handle connection result
+
       _connectionTimeout?.cancel();
-      
+
       if (success == true) {
         _hasShownResult = true;
         _dismissLoadingAndShowSuccess();
@@ -150,26 +140,25 @@ class _QRScannerPageState extends State<QRScannerPage> {
         _hasShownResult = true;
         _dismissLoadingAndShowFailure();
       }
-      
     } catch (e) {
       print('QR Processing Error: $e');
-      
+
       _hasShownResult = true;
       _connectionTimeout?.cancel();
       _dismissLoadingDialog();
-      
+
       String errorMessage = e.toString();
       if (errorMessage.contains('FormatException')) {
-        errorMessage = 'Invalid QR code format. Please scan a valid settings QR code.';
+        errorMessage =
+            'Invalid QR code format. Please scan a valid settings QR code.';
       }
-      
+
       BottomPopup.showError(
-        context: context, 
-        title: "QR Code Error", 
-        subtitle: errorMessage.replaceAll('Exception: ', '')
+        context: context,
+        title: "QR Code Error",
+        subtitle: errorMessage.replaceAll('Exception: ', ''),
       );
-      
-      // Reset scanning state after showing error
+
       Future.delayed(Duration(milliseconds: 500), () {
         if (mounted) {
           _resetScanningState();
@@ -180,11 +169,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   Future<void> _saveSettings(Map<String, dynamic> settings) async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Save IP (required)
+
     await prefs.setString('saved_ip', settings['ip']);
-    
-    // Save optional fields if they exist
+
     if (settings.containsKey('username')) {
       await prefs.setString('username', settings['username']);
     }
@@ -197,51 +184,49 @@ class _QRScannerPageState extends State<QRScannerPage> {
     if (settings.containsKey('screens')) {
       await prefs.setString('screens', settings['screens'].toString());
     }
-    
+
     print('Settings saved: $settings');
   }
-  
+
   void _dismissLoadingDialog() {
     if (mounted && Navigator.of(context).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
   }
-  
+
   void _dismissLoadingAndShowSuccess() {
     _dismissLoadingDialog();
-    
+
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) {
         BottomPopup.showSuccess(
-          context: context, 
-          title: "Connection Successful", 
-          subtitle: "Successfully connected to the server."
+          context: context,
+          title: "Connection Successful",
+          subtitle: "Successfully connected to the server.",
         );
-        
-        // Navigate back to home after success
+
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) {
             Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => LG_AIRPORT_M()),
+              MaterialPageRoute(builder: (context) => LG_AIRPORT_M()),
             );
           }
         });
       }
     });
   }
-  
+
   void _dismissLoadingAndShowFailure() {
     _dismissLoadingDialog();
-    
+
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) {
         BottomPopup.showError(
-          context: context, 
-          title: "Connection Failed", 
-          subtitle: "Failed to connect to the server."
+          context: context,
+          title: "Connection Failed",
+          subtitle: "Failed to connect to the server.",
         );
-        
-        // Reset scanning after failure
+
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) {
             _resetScanningState();
@@ -253,20 +238,19 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   void _dismissLoadingAndShowTimeout() {
     _dismissLoadingDialog();
-    
+
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) {
         BottomPopup.show(
-          context: context, 
+          context: context,
           data: PopupData(
             type: PopupType.error,
-            titleColor: context.connectionPendingColor, 
-            title: "Connection Timeout", 
-            subtitle: "The connection to the server timed out."
-          )
+            titleColor: context.connectionPendingColor,
+            title: "Connection Timeout",
+            subtitle: "The connection to the server timed out.",
+          ),
         );
-        
-        // Reset scanning after timeout
+
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) {
             _resetScanningState();
@@ -275,7 +259,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
       }
     });
   }
-  
+
   void _showLoadingDialog() {
     showDialog(
       context: context,
@@ -315,7 +299,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
       });
     }
   }
-  
+
   void _flashToggle() async {
     if (controller != null) {
       await controller!.toggleFlash();
@@ -327,17 +311,17 @@ class _QRScannerPageState extends State<QRScannerPage> {
       }
     }
   }
-  
+
   void _cameraSwitch() async {
     if (controller != null) {
       await controller!.flipCamera();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: AppBar(
+      appBar: AppBar(
         title: Text(
           'Scan Settings QR Code'.tr(),
           style: TextStyle(
@@ -345,8 +329,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
             fontWeight: FontWeight.w400,
             color: context.colors.onSurface,
           ),
-        ), backgroundColor: context.appbar,
-        iconTheme: IconThemeData(color: context.colors.onSurface)
+        ),
+        backgroundColor: context.appbar,
+        iconTheme: IconThemeData(color: context.colors.onSurface),
       ),
       body: Stack(
         children: <Widget>[

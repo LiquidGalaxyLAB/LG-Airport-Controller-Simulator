@@ -32,9 +32,9 @@ class _ActiveApproachesScreenState extends State<ActiveApproachesScreen>
     _socketService.loadSavedIP();
     _socketService.addListener(_onSocketServiceChanged);
     
-    // Add listener for tab changes
+   
     _tabController.addListener(() {
-      if (_tabController.index == 1 && !_hasVisitedTakeoffTab) { // Takeoff tab - first visit only
+      if (_tabController.index == 1 && !_hasVisitedTakeoffTab) {
         _hasVisitedTakeoffTab = true;
         _socketService.refreshTakeoffPlanes();
       }
@@ -51,7 +51,7 @@ class _ActiveApproachesScreenState extends State<ActiveApproachesScreen>
   void _onSocketServiceChanged() {
     setState(() {});
     
-    // Reset the first visit flag when game is stopped or restarted
+   
     if (!_socketService.isGameStarted) {
       _hasVisitedTakeoffTab = false;
     }
@@ -313,22 +313,6 @@ class _ActiveApproachesScreenState extends State<ActiveApproachesScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              // ElevatedButton.icon(
-              //   onPressed: () {
-              //     _socketService.refreshTakeoffPlanes();
-              //     setState(() {});
-              //   },
-              //   icon: Icon(Icons.refresh),
-              //   label: Text('Refresh'.tr()),
-              //   style: ElevatedButton.styleFrom(
-              //     backgroundColor: Colors.green,
-              //     foregroundColor: Colors.white,
-              //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              //     shape: RoundedRectangleBorder(
-              //       borderRadius: BorderRadius.circular(8),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -521,12 +505,12 @@ List<Map<String, dynamic>> _getTakeoffPlanes() {
   return _socketService.airplanes.map<Map<String, dynamic>>((plane) {
     print('Processing plane: $plane');
     
-    // Handle different possible data structures
+   
     String label = 'Unknown';
     String deslabel = 'Unknown';
     
     if (plane is Map<String, dynamic>) {
-      // Try different possible structures
+     
       if (plane['source'] != null && plane['source'] is Map) {
         label = plane['source']['label']?.toString() ?? 'Unknown';
       } else if (plane['label'] != null) {
@@ -733,14 +717,6 @@ List<Map<String, dynamic>> _getTakeoffPlanes() {
                                 color: Colors.orange,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              // child: const Text(
-                              //   'FINAL',
-                              //   style: TextStyle(
-                              //     fontSize: 10,
-                              //     fontWeight: FontWeight.bold,
-                              //     color: Colors.white,
-                              //   ),
-                              // ),
                             ),
                           ],
                         ],
@@ -824,12 +800,12 @@ void _handleConnectGame() {
     onCountdownComplete: () async {
       print('Connecting and starting game...');
       
-      // First try to connect if not connected
+     
       if (!_socketService.isConnected) {
-         await _socketService.auto(); // or connectToSocket with IP
+         await _socketService.auto();
       }
       
-      // Then start the game
+     
       await _socketService.startGame();
       Navigator.pushReplacement(
         context, 
@@ -863,19 +839,19 @@ void _handleConnectGame() {
      if (success) {
        await Future.delayed(Duration(seconds: 1));
       
-      // Find matching plane in airplanesData by comparing middle characters of labels
+     
       final matchingPlane = findPlaneByLabelMatch(plane, _socketService.airplanesData);
       
       if (matchingPlane != null) {
         print('Found matching plane: $matchingPlane');
         _socketService.selectPlane(matchingPlane);
         _socketService.airplanes.removeWhere((item) => item['destination']?['label'] == plane['deslabel']);
-        // final deleteAirplane = removeAirplaneByDestLabel(_socketService.airplanes, plane['deslabel']);
+       
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CommandScreen()),
         );
-        // return matchingPlane;
+       
       } else {
         print('No matching plane found');
         return null;

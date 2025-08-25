@@ -234,7 +234,6 @@ class _InstructionPageState extends State<InstructionPage>
               ),
             ),
             
-            // Starting Steps Section
             const SizedBox(height: 32),
             Text(
               "Before You Start",
@@ -274,7 +273,6 @@ class _InstructionPageState extends State<InstructionPage>
             
             const SizedBox(height: 24),
             
-            // Action Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
