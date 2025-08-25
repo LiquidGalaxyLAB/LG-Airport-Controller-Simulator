@@ -49,7 +49,7 @@ class _LGTaskState extends State<LG_Task> {
           ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Even spacing
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildButton(Icons.restart_alt, 'Relaunch'.tr(), ()async {
               print('dev'.tr());
@@ -58,11 +58,11 @@ class _LGTaskState extends State<LG_Task> {
             });
               print('dev');
 
-              // Handle restart action
+             
             }),
             _buildButton(Icons.power_settings_new, 'Clean kml'.tr(), () async{
               await ssh.cleanrig();
-              // Handle shutdown action
+             
             }),
             _buildButton(Icons.autorenew, 'Reboot'.tr(), ()async {
               BottomPopup.showInfo(context: context, title: "Reboot LG".tr(), subtitle: "Are you sure. Rebooting the LG ?".tr(), options: ["ok".tr()], onOptionSelected: (selectedOption) async {
@@ -80,8 +80,8 @@ class _LGTaskState extends State<LG_Task> {
 
   Widget _buildButton(IconData icon, String label, VoidCallback onPressed) {
     return SizedBox(
-      width: 250, // Ensures all buttons have the same width
-      height: 60, // Optional: Set equal height for buttons
+      width: 250,
+      height: 60,
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, size: 30,

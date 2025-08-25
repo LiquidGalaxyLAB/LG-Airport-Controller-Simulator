@@ -33,16 +33,18 @@ class SocketService extends ChangeNotifier {
 
   Map<String, dynamic>? _selectedPlane;
   int _degrees = 0;
+  int _changeDegrees = 0;
   int _changeAltitude = 0;
   int? _previousAltitude;
   bool _pause = false;
   String _commandText = "";
   List<dynamic> _takeoffPlanes = [];
-  bool _gameOverPopupShown = false; // Add flag to prevent multiple popups
-  bool _isGameStarted = false; // Add flag to track game state
-  // final context = navigatorKey.currentContext;
+  bool _gameOverPopupShown = false;
+  bool _isGameStarted = false;
 
-  // Getters
+  int _orbitCount = 0;
+  int _originalHeading = 0;
+
   String get ip => _ip;
   bool get isConnected => _isConnected;
   bool get isConnecting => _isConnecting;
@@ -53,16 +55,16 @@ class SocketService extends ChangeNotifier {
   int get degrees => _degrees;
   int get changeAltitude => _changeAltitude;
   bool get ispause => _pause;
-  bool get isGameStarted => _isGameStarted; 
-  // String get commandText => _commandText;
+  bool get isGameStarted => _isGameStarted;
+  int get orbitCount => _orbitCount;
 
   final ValueNotifier<String> commandText = ValueNotifier<String>("");
+
   void log(String message) {
     print(message);
     _logs.insert(0, message);
     notifyListeners();
   }
-   
 
   Future<void> loadSavedIP() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -73,55 +75,57 @@ class SocketService extends ChangeNotifier {
   Future<void> _saveIP(String ip) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('ip', ip);
-  } 
+  }
 
-Future<void> auto() async {
-   SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<void> auto() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     _ip = prefs.getString('ip') ?? '';
-    if(_ip != ''){
-    connectToSocket(_ip);}
-    else{
+    if (_ip != '') {
+      connectToSocket(_ip);
+    } else {
       _speak("no ip address found. please enter it");
     }
     notifyListeners();
   }
 
-
-Future<bool> connectToSocket(String ip) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<bool> connectToSocket(String ip) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     log('🔌 Trying to connect to $ip');
     _saveIP(ip);
     _ip = ip;
     _isConnecting = true;
     notifyListeners();
-     
-  var serverport = prefs.getString('serverport') ?? '8111';
-    // Create a completer to handle the async connection result
+
+    var serverport = prefs.getString('serverport') ?? '8111';
+
     Completer<bool> completer = Completer<bool>();
-    
+
     _socket = IO.io('http://$ip:$serverport', {
       'transports': ['websocket', 'polling'],
-      'autoConnect': false,           
+      'autoConnect': false,
     });
-    
+
     _socket.connect();
-    
+
     _socket.onConnect((_) {
       log(' Connected to $ip');
       _isConnected = true;
       _isConnecting = false;
       notifyListeners();
-      
+
       if (!completer.isCompleted) {
         completer.complete(true);
       }
-      
-      _socket.emitWithAck('get-airport-positions', {}, ack: (data) {
-        _airplanes = List.from(data);
-        log(' Received airplanes via callback.');
-        notifyListeners();
-        // completer.complete(true);
-      });
+
+      _socket.emitWithAck(
+        'get-airport-positions',
+        {},
+        ack: (data) {
+          _airplanes = List.from(data);
+          log(' Received airplanes via callback.');
+          notifyListeners();
+        },
+      );
     });
 
     _socket.onConnectError((err) {
@@ -129,7 +133,7 @@ Future<bool> connectToSocket(String ip) async {
       _isConnected = false;
       _isConnecting = false;
       notifyListeners();
-      
+
       if (!completer.isCompleted) {
         completer.complete(false);
       }
@@ -137,25 +141,23 @@ Future<bool> connectToSocket(String ip) async {
 
     _socket.onDisconnect((reason) {
       log(' Disconnected from server do hear when disconnect ');
-        if (reason == 'io server disconnect') {
-      log('🚨 SERVER KICKED US OUT! This is the problem!');
-      _isConnecting = false;
-    } else if (reason == 'ping timeout') {
-      log('📡 Connection lost due to ping timeout');
-      _isConnecting = false;
-    } else {
-      _isConnecting = false;
-    }
+      if (reason == 'io server disconnect') {
+        log('🚨 SERVER KICKED US OUT! This is the problem!');
+        _isConnecting = false;
+      } else if (reason == 'ping timeout') {
+        log('📡 Connection lost due to ping timeout');
+        _isConnecting = false;
+      } else {
+        _isConnecting = false;
+      }
       _airplanes = [];
       _airplanesData = [];
       _selectedPlane = null;
       _isConnected = false;
       _socket.disconnect();
-      // _socket.dispose();
       notifyListeners();
     });
 
-    // Add other socket listeners here...
     _socket.on('fetch-airplanes', (data) {
       print('Received airplanes data: $data');
       if (data is List) {
@@ -163,18 +165,6 @@ Future<bool> connectToSocket(String ip) async {
         notifyListeners();
       }
     });
-
-    // _socket.on('error', (data) {
-    //   print('Socket error: $data');
-    //   _playErrorSound();
-    //   print('Connection Error: ${'Failed to connect to server'.tr()}');
-    // });
-
-    // _socket.on('connect_error', (data) {
-    //   print('Connection error: $data');
-    //   _playErrorSound();
-    //   print('Connection Error: ${'Failed to establish connection'.tr()}');
-    // });
 
     _socket.on('aeroplane-data', (data) {
       log(' aeroplane-data received for $data');
@@ -189,108 +179,94 @@ Future<bool> connectToSocket(String ip) async {
       notifyListeners();
     });
 
-   _socket.on('takeoff-planes', (data) {
-  log('takeoff-planes received: $data');
+    _socket.on('takeoff-planes', (data) {
+      log('takeoff-planes received: $data');
 
-  if (data is List) {
-    List<dynamic> flatPlanes = data;
+      if (data is List) {
+        List<dynamic> flatPlanes = data;
 
-    log("Flattened planes: ${flatPlanes.map((p) => p['label']).toList()}");
-    log("Detailed planes data: $flatPlanes");
-    _airplanes = flatPlanes;
-    // _combineAirplanes();
+        log("Flattened planes: ${flatPlanes.map((p) => p['label']).toList()}");
+        log("Detailed planes data: $flatPlanes");
+        _airplanes = flatPlanes;
 
-    notifyListeners();
-  } else {
-    log("Unexpected data format for takeoff-planes: $data");
-  }
-});
-
-    _socket.on('error-popup', (data) =>_playErrorSound());
-     _socket.on('Completed', (data) => _playSuccessSound());
-    _socket.on('all-airport-positions', (data) => log('All airport positions: $data'));
-
-     _socket.on('gameStopData', (data) {
-        _airplanesData = [];
-        _airplanes = [];
-        _takeoffPlanes = [];
-        _pause = false;
-        _isGameStarted = false;
-        _gameOverPopupShown = false; // Reset popup flag
         notifyListeners();
-        });
+      } else {
+        log("Unexpected data format for takeoff-planes: $data");
+      }
+    });
 
-      _socket.on('gameOverData', (data) {
-        // Clear all lists
-        _airplanesData = [];
-        _airplanes = [];
-        _takeoffPlanes = [];
-        _isGameStarted = false;
-        
-        // Only show popup if not already shown
-        if (!_gameOverPopupShown) {
-          _gameOverPopupShown = true;
-          BottomPopup.showGameOver(context: navigatorKey.currentContext!, conflicts: data['conflictCount'], wrongExits:data['wrongExitCount'] , score: data['successCount'] , badDepature: data['baddepartureCount'], title: 'Game Over', onRestart: () async { 
-                    // _gameOverPopupShown = false;
-                    _instance.startGame();
-                    
-                    //  BottomPopup.showSimpleCountdown(
-                    //   context: navigatorKey.currentContext!,
-                    //   title: 'Restarting Game'.tr(),
-                    //   onCountdownComplete: () async {
-                    //     print('restarting game... 3');
-                    //     await _instance.startGame();
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Navigator.pushAndRemoveUntil(
-                        navigatorKey.currentContext!,
-                        MaterialPageRoute(builder: (context) => const ActiveApproachesScreen()),
-                        (route) => false 
-                      );
-                      });
-                    //     BottomPopup.showSuccess(
-                    //       context: navigatorKey.currentContext!, 
-                    //       title: 'Restarted game successfully'.tr(), 
-                    //     );
+    _socket.on('error-popup', (data) => _playErrorSound());
+    _socket.on('Completed', (data) => _playSuccessSound());
+    _socket.on(
+      'all-airport-positions',
+      (data) => log('All airport positions: $data'),
+    );
 
-                    //     print('Game started');
-                  //     },
-                  // );
-                    //  _instance.startGame();
-                 
-                    });  }
-        notifyListeners();
-        });
-
-        _socket.on('gameStartData', (data) {
-        // Clear all lists
-        _airplanesData = [];
-        _airplanes = [];
-        _takeoffPlanes = [];
-        _isGameStarted = true;
-        _gameOverPopupShown = false;
-
-          notifyListeners();
-        });
-
-         _socket.on('gameResetData' , (data) {
-            _pause = false;
-          _isGameStarted = true;
+    _socket.on('gameStopData', (data) {
+      _airplanesData = [];
+      _airplanes = [];
+      _takeoffPlanes = [];
+      _pause = false;
+      _isGameStarted = false;
       _gameOverPopupShown = false;
-              notifyListeners();  
-  });
-        
-    // Set a timeout for connection attempt
-    // Timer(Duration(seconds: 15), () {
-    //   if (!completer.isCompleted) {
-    //     _isConnected = false;
-    //     _isConnecting = false;
-    //     notifyListeners();
-    //     completer.complete(false);
-    //   }
-    // });
+      notifyListeners();
+    });
+
+    _socket.on('gameOverData', (data) {
+      _airplanesData = [];
+      _airplanes = [];
+      _takeoffPlanes = [];
+      _isGameStarted = false;
+
+      if (!_gameOverPopupShown) {
+        _gameOverPopupShown = true;
+        BottomPopup.showGameOver(
+          context: navigatorKey.currentContext!,
+          conflicts: data['conflictCount'],
+          wrongExits: data['wrongExitCount'],
+          score: data['successCount'],
+          badDepature: data['baddepartureCount'],
+          title: 'Game Over',
+          onRestart: () async {
+            _instance.startGame();
+
+            Future.delayed(Duration.zero, () {
+              if (navigatorKey.currentContext != null) {
+                Navigator.pushAndRemoveUntil(
+                  navigatorKey.currentContext!,
+                  MaterialPageRoute(
+                    builder: (context) => const ActiveApproachesScreen(),
+                  ),
+                  (route) => false,
+                );
+              }
+            });
+          },
+        );
+      }
+      notifyListeners();
+    });
+
+    _socket.on('gameStartData', (data) {
+      _airplanesData = [];
+      _airplanes = [];
+      _takeoffPlanes = [];
+      _isGameStarted = true;
+      _gameOverPopupShown = false;
+
+      notifyListeners();
+    });
+
+    _socket.on('gameResetData', (data) {
+      _pause = false;
+      _isGameStarted = true;
+      _gameOverPopupShown = false;
+      notifyListeners();
+    });
 
     return completer.future;
   }
+
   void disconnectSocket() {
     if (_socket.connected) {
       _socket.disconnect();
@@ -312,12 +288,16 @@ Future<bool> connectToSocket(String ip) async {
           completer.complete(false);
         }
       });
-      _socket.emitWithAck('game-over', {}, ack: (data) {
-        if (!completed && !completer.isCompleted) {
-          completed = true;
-          completer.complete(true);
-        }
-      });
+      _socket.emitWithAck(
+        'game-over',
+        {},
+        ack: (data) {
+          if (!completed && !completer.isCompleted) {
+            completed = true;
+            completer.complete(true);
+          }
+        },
+      );
       return completer.future;
     } catch (_) {
       return false;
@@ -325,32 +305,27 @@ Future<bool> connectToSocket(String ip) async {
   }
 
   Map<String, int> getGameStatistics() {
-    return {
-      'score': 0, 
-      'conflicts': 0, 
-      'wrongExits': 0, 
-      'correctExits': 0, 
-    };
+    return {'score': 0, 'conflicts': 0, 'wrongExits': 0, 'correctExits': 0};
   }
 
   bool addPlane(Map<String, dynamic> plane) {
-   try{ _socket.emit('add-plane-controller', {
-      'screen': plane['screen'],
-      'x': plane['x'],
-      'y': plane['y'],
-      'label': plane['label'],
-      'destation' : plane['destation'],
-      'source' : plane['source'],
-    });
-    log("add-plane emitted for ${plane['label']}");
-    return true;}
-    catch (e){
+    try {
+      _socket.emit('add-plane-controller', {
+        'screen': plane['screen'],
+        'x': plane['x'],
+        'y': plane['y'],
+        'label': plane['label'],
+        'destation': plane['destation'],
+        'source': plane['source'],
+      });
+      log("add-plane emitted for ${plane['label']}");
+      return true;
+    } catch (e) {
       return false;
     }
   }
 
-  void _playSuccessSound () async
-  {
+  void _playSuccessSound() async {
     await _player.play(AssetSource('audio/success.mp3'));
   }
 
@@ -361,19 +336,17 @@ Future<bool> connectToSocket(String ip) async {
   Future<bool> startGame() async {
     try {
       if (!_isConnected) return false;
-      
-      // Clear old plane lists when starting a new game
+
       _airplanes = [];
       _airplanesData = [];
       _takeoffPlanes = [];
       _selectedPlane = null;
       _gameOverPopupShown = false;
-      
+
       _socket.emit('gameStart');
       _socket.emit('fetch-airplanes-io');
 
-      // _isGameStarted = true;
-      notifyListeners(); // Add this to notify listeners of state change
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
@@ -383,33 +356,23 @@ Future<bool> connectToSocket(String ip) async {
   Future<bool> pauseGame() async {
     try {
       if (!_isConnected) return false;
-      
+
       _socket.emit('gamePause');
       _pause = true;
-      notifyListeners(); // Add this to notify listeners of state change
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  // Future<bool> restartGame() async {
-  //   try {
-  //     if (!_isConnected) return false;
-  //     _socket.emit('gameReset');
-  //     notifyListeners(); // Add this to notify listeners of state change
-  //     return true;
-  //   } catch (_) {
-  //     return false;
-  //   }
-  // }
   Future<bool> resumeGame() async {
     try {
       if (!_isConnected) return false;
-      
+
       _socket.emit('gameResume');
       _pause = false;
-      notifyListeners(); // Add this to notify listeners of state change
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
@@ -422,8 +385,8 @@ Future<bool> connectToSocket(String ip) async {
       _socket.emit('gameStop');
       _pause = false;
       _isGameStarted = false;
-      _gameOverPopupShown = false; // Reset popup flag
-      notifyListeners(); // Add this to notify listeners of state change
+      _gameOverPopupShown = false;
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
@@ -433,18 +396,18 @@ Future<bool> connectToSocket(String ip) async {
   Future<bool> verifyServerConfiguration() async {
     try {
       if (!_isConnected) return false;
-      
-      var maxAttempts = true ; 
-      
+
+      var maxAttempts = true;
+
       while (_airplanes.length < 5) {
         await Future.delayed(const Duration(seconds: 3));
-        // Request airplanes data again
+
         _socket.emit('fetch-airplanes-io');
       }
-       if(_airplanes.length >= 0 && _airplanes.length <= 5){
+      if (_airplanes.length >= 0 && _airplanes.length <= 5) {
         maxAttempts = false;
-       }
-      return true ;
+      }
+      return true;
     } catch (e) {
       return false;
     }
@@ -461,26 +424,49 @@ Future<bool> connectToSocket(String ip) async {
     _selectedPlane = plane;
     _changeAltitude = plane['altitude'] ?? 0;
     _degrees = plane['heading'] ?? 0;
-    _socket.emit('select-plane',{ 
-      'dir': plane['label'] , 'altitude' : plane['altitude'] });
-      // _socket.emit('select-plane',plane['label'] );
-  
+    _changeDegrees = plane['heading'] ?? 0;
+
+    _orbitCount = 0;
+    _originalHeading = plane['heading'] ?? 0;
+
+    _socket.emit('select-plane', {
+      'dir': plane['label'],
+      'altitude': plane['altitude'],
+    });
+
     _updateCommandPreview();
     notifyListeners();
   }
 
   void clearSelectedPlane() {
-    // _selectedPlane = null;
-    _socket.emit('deselect-plane',{
-      'label' : _selectedPlane!['label']});
-    // _changeAltitude = 0;
-    // _degrees = 0;
-    // commandText.value = "";
-    notifyListeners();
+    if (_selectedPlane != null) {
+      _socket.emit('deselect-plane', {
+        'label': _selectedPlane!['label'],
+        "altitude": _selectedPlane!['altitude'],
+      });
+
+      _orbitCount = 0;
+      _originalHeading = 0;
+
+      notifyListeners();
+    }
   }
 
   void turnLeft() {
-    if (_degrees > -360) {
+    if (_selectedPlane == null) return;
+
+    if (_orbitCount == 0) {
+      _originalHeading = _selectedPlane!['heading'] ?? 0;
+    }
+
+    if (_orbitCount > 0) {
+      _orbitCount--;
+      _degrees += 45;
+      _socket.emit('update-plane-left');
+      _updateCommandPreview();
+      notifyListeners();
+    } else if (_orbitCount > -8) {
+      _orbitCount--;
       _degrees -= 45;
       _socket.emit('update-plane-left');
       _updateCommandPreview();
@@ -489,7 +475,20 @@ Future<bool> connectToSocket(String ip) async {
   }
 
   void turnRight() {
-    if (_degrees < 360) {
+    if (_selectedPlane == null) return;
+
+    if (_orbitCount == 0) {
+      _originalHeading = _selectedPlane!['heading'] ?? 0;
+    }
+
+    if (_orbitCount < 0) {
+      _orbitCount++;
+      _degrees -= 45;
+      _socket.emit('update-plane-right');
+      _updateCommandPreview();
+      notifyListeners();
+    } else if (_orbitCount < 8) {
+      _orbitCount++;
       _degrees += 45;
       _socket.emit('update-plane-right');
       _updateCommandPreview();
@@ -520,44 +519,28 @@ Future<bool> connectToSocket(String ip) async {
     _selectedPlane!['altitude'] = _changeAltitude;
     _selectedPlane!['heading'] = _degrees;
 
-    if (_selectedPlane!['isnew'] && _selectedPlane!['altitude'] == 0 ) {
-    return false;
-    } 
+    if (_selectedPlane!['isnew'] && _selectedPlane!['altitude'] == 0) {
+      return false;
+    }
     var ls = _selectedPlane!['altitude'];
-    var cmd ;
-  if(_selectedPlane!['isnew'] && ls > 0  ){
-    _selectedPlane!['takeoff'] = true;
-    _selectedPlane!['isnew'] = false;
-    cmd = 'CLIMB AND MAINTAIN $ls FEET CLEARED TO TAKEOFF';
-  }
+    var cmd;
+    if (_selectedPlane!['isnew'] && ls > 0) {
+      _selectedPlane!['takeoff'] = true;
+      _selectedPlane!['isnew'] = false;
+      cmd = 'CLIMB AND MAINTAIN $ls FEET CLEARED TO TAKEOFF';
+    }
 
-
-    final command = _generateCommandSpeech(_selectedPlane!, _previousAltitude ?? 0 , cmd);
+    final command = _generateCommandSpeech(
+      _selectedPlane!,
+      _previousAltitude ?? 0,
+      cmd,
+    );
     _socket.emit('submit-plane', _selectedPlane);
     _socket.emit('send-command', command);
     _speak(command);
     commandText.value = command;
     notifyListeners();
     return true;
-  }
-
-  void _combineAirplanes() {
-    if (_takeoffPlanes.isEmpty) return;
-    
-    // Create a map to store unique airplanes by label
-    Map<String, dynamic> uniqueAirplanes = {};
-    
-    for (var airplane in _airplanes) {
-      if (airplane is Map<String, dynamic> && airplane['label'] != null) {
-        String label = airplane['label'].toString();
-        // Keep the most recent entry for each label
-        uniqueAirplanes[label] = airplane;
-      }
-    }
-    
-    // Update the airplanes list with unique entries
-    _airplanes = uniqueAirplanes.values.toList();
-    notifyListeners();
   }
 
   void _updateCommandPreview() {
@@ -571,53 +554,65 @@ Future<bool> connectToSocket(String ip) async {
     notifyListeners();
   }
 
-  String _generateCommandSpeech(Map<String, dynamic> data, int prevAltitude , [String? takeoffcmd]) {
+  String _generateCommandSpeech(
+    Map<String, dynamic> data,
+    int prevAltitude, [
+    String? takeoffcmd,
+  ]) {
     final callSign = data['label'];
     final altitude = data['altitude'];
     final heading = data['heading'];
-    final dir = _degrees < 0 ? "LEFT" : "RIGHT";
-    final formattedHeading = _degrees.abs().toString().padLeft(3, '0');
 
     String command1 = "";
-    if (_degrees != 0) {
-      command1 = _degrees.abs() == 360
-          ? "ORBIT $dir"
-          : _degrees.abs() == 405
-              ? "HOLD $dir"
-              : "TURN $dir -> $formattedHeading";
+
+    int displayHeading = (_originalHeading + _degrees) % 360;
+    if (displayHeading < 0) displayHeading += 360;
+
+    if (_orbitCount >= 8) {
+      command1 = "ORBIT";
+    } else if (_orbitCount <= -8) {
+      command1 = "ORBIT";
+    } else if (_orbitCount > 0) {
+      final formattedHeading = displayHeading.toString().padLeft(3, '0');
+      command1 = "TURN RIGHT -> $formattedHeading";
+    } else if (_orbitCount < 0) {
+      final formattedHeading = displayHeading.toString().padLeft(3, '0');
+      command1 = "TURN LEFT -> $formattedHeading";
     } else {
       command1 = "Head to $heading";
     }
 
     String command2 = "";
     if (prevAltitude != altitude && altitude != 0) {
-      command2 = prevAltitude > altitude
-          ? "DESCEND AND MAINTAIN $altitude FEET."
-          : "CLIMB AND MAINTAIN $altitude FEET.";
+      command2 =
+          prevAltitude > altitude
+              ? "DESCEND AND MAINTAIN $altitude FEET."
+              : "CLIMB AND MAINTAIN $altitude FEET.";
     } else if (altitude != 0) {
       command2 = "AT $altitude FEET";
     }
-    if(takeoffcmd != null || data['isnew'] == true){
-      command2 = takeoffcmd ?? "CLIMB AND MAINTAIN $altitude FEET CLEARED TO TAKEOFF";
+
+    if (takeoffcmd != null || data['isnew'] == true) {
+      command2 =
+          takeoffcmd ?? "CLIMB AND MAINTAIN $altitude FEET CLEARED TO TAKEOFF";
       takeoffcmd = null;
     }
+
     return "$callSign $command1 $command2";
   }
 
   Future<void> _speak(String text) async {
-     await _tts.awaitSpeakCompletion(true); // Ensure it waits for previous speech
+    await _tts.awaitSpeakCompletion(true);
     await _tts.setSpeechRate(0.5);
-   await _tts.awaitSynthCompletion(true); // Ensures readiness (on some platforms)
-  
-  // Some optional safety steps
-  await _tts.setLanguage("en-US");       // Set language explicitly if needed
+    await _tts.awaitSynthCompletion(true);
+
+    await _tts.setLanguage("en-US");
 
     await _tts.setSpeechRate(0.5);
     await _tts.speak(text);
     await _tts.awaitSpeakCompletion(true);
     await _tts.speak("Roger");
   }
-
 
   void setIP(String ip) {
     _ip = ip;

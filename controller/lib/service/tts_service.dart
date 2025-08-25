@@ -34,14 +34,14 @@ class TtsService extends ChangeNotifier {
     if (isInitializedFlag) return;
 
     try {
-      // Get available languages and voices
+      
       availableLanguages = await tts.getLanguages;
       availableVoices = await tts.getVoices;
 
-      // Load saved settings
+      
       await loadSettings();
 
-      // Apply settings to TTS
+      
       await applySettings();
 
       isInitializedFlag = true;
@@ -51,7 +51,7 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Load settings from SharedPreferences
+  
   Future<void> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -65,7 +65,7 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Save settings to SharedPreferences
+  
   Future<void> saveSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -83,7 +83,7 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Apply current settings to TTS engine
+  
   Future<void> applySettings() async {
     try {
       await tts.setSpeechRate(speechRateValue);
@@ -105,7 +105,7 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Update speech rate
+  
   Future<void> updateSpeechRate(double rate) async {
     speechRateValue = rate.clamp(0.1, 2.0);
     await tts.setSpeechRate(speechRateValue);
@@ -113,7 +113,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update volume
+  
   Future<void> updateVolume(double volume) async {
     volumeValue = volume.clamp(0.0, 1.0);
     await tts.setVolume(volumeValue);
@@ -121,7 +121,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update pitch
+  
   Future<void> updatePitch(double pitch) async {
     pitchValue = pitch.clamp(0.5, 2.0);
     await tts.setPitch(pitchValue);
@@ -129,7 +129,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update selected voice
+  
   Future<void> updateVoice(String? voiceName) async {
     selectedVoice = voiceName;
     if (voiceName != null) {
@@ -142,7 +142,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update selected language
+  
   Future<void> updateLanguage(String? language) async {
     selectedLanguage = language;
     if (language != null) {
@@ -152,7 +152,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Main speak function with custom settings
+  
   Future<void> speak(String text, {
     double? customRate,
     double? customVolume,
@@ -165,7 +165,7 @@ class TtsService extends ChangeNotifier {
     }
 
     try {
-      // Apply custom settings if provided
+      
       if (customRate != null) {
         await tts.setSpeechRate(customRate);
       }
@@ -182,17 +182,17 @@ class TtsService extends ChangeNotifier {
         });
       }
 
-      // Speak the text
+      
       await tts.speak(text);
       await tts.awaitSpeakCompletion(true);
 
-      // Add "Roger" if requested
+      
       if (addRoger) {
         await tts.speak("Roger");
         await tts.awaitSpeakCompletion(true);
       }
 
-      // Restore original settings if custom ones were used
+      
       if (customRate != null || customVolume != null || customPitch != null || customVoice != null) {
         await applySettings();
       }
@@ -201,17 +201,17 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Stop speaking
+  
   Future<void> stop() async {
     await tts.stop();
   }
 
-  // Pause speaking
+  
   Future<void> pause() async {
     await tts.pause();
   }
 
-  // Get voice info by name
+  
   Map<String, dynamic>? getVoiceInfo(String voiceName) {
     try {
       return availableVoices.firstWhere(
@@ -223,14 +223,14 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Get voices for specific language
+  
   List<dynamic> getVoicesForLanguage(String language) {
     return availableVoices.where((voice) {
       return voice['locale']?.toString().startsWith(language.split('-')[0]) ?? false;
     }).toList();
   }
 
-  // Reset to default settings
+  
   Future<void> resetToDefaults() async {
     speechRateValue = 0.5;
     volumeValue = 1.0;
@@ -243,7 +243,7 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Dispose
+  
   @override
   void dispose() {
     tts.stop();

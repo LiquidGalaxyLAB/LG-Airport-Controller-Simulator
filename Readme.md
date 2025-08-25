@@ -115,19 +115,35 @@ Their continuous support, expertise, and dedication made this project possible.
 
 **More Information**: [www.liquidgalaxy.eu](http://www.liquidgalaxy.eu)
 
+
+## Gallery 
+![game1](./images/game1.png)
+![game2](./images/game2.png)
+![game3](./images/game3.png)
+![game4](./images/game4.png)
+![game5](./images/game5.png)
+![game6](./images/game6.png)
+------
+![controller](./images/1.webp)
+![controller](./images/2.webp)
+![controller](./images/3.webp)
+![controller](./images/4.png)
+
+## Demo Day 
+
+[![Demo Video](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=5bYNLjyn9rY&t=7676s)
+
+
 ## Useful Repositories
 
 The following repositories were instrumental in the development of this project:
 
-### Core Technologies
 ### Liquid Galaxy Resources
 - **Liquid Galaxy Scripts**: [https://github.com/LiquidGalaxyLAB/liquid-galaxy](https://github.com/LiquidGalaxyLAB/liquid-galaxy)
 
 ### Reference Projects
 - **Galaxy Pacman**: [project that gave reference to screen management](https://github.com/LiquidGalaxyLAB/galaxy-pacman)
 - **LG RetroGaming**: [Give understanding for screen number as in head LG lab ](https://github.com/LiquidGalaxyLAB/lg-retro-gaming)
-
-*Note: Specific repository links for reference projects can be added based on the actual repositories used during development.*
 
 ---
 

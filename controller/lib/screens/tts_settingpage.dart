@@ -4,7 +4,6 @@ import 'package:lg_airport_simulator_apk/service/tts_service.dart';
 import 'package:provider/provider.dart';
 import 'package:lg_airport_simulator_apk/screens/theme_provider.dart';
 
-
 class TtsSettingsPage extends StatefulWidget {
   const TtsSettingsPage({Key? key}) : super(key: key);
 
@@ -33,14 +32,16 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
       value: ttsService,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Voice Settings'.tr(),
-           style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w400,
-                color: context.colors.onSurface,
-              )),
-            backgroundColor: context.appbar,
-            iconTheme: IconThemeData(color: context.colors.onSurface),
+          title: Text(
+            'Voice Settings'.tr(),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
+              color: context.colors.onSurface,
+            ),
+          ),
+          backgroundColor: context.appbar,
+          iconTheme: IconThemeData(color: context.colors.onSurface),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -115,22 +116,22 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
   }
 
   Widget buildLanguageSection(TtsService tts) {
-    // Convert available languages to string format for consistency
-    final languageStrings = tts.availableLanguages.map((lang) => lang.toString()).toList();
-    
-    // Ensure the selected language exists in the available languages
+    final languageStrings =
+        tts.availableLanguages.map((lang) => lang.toString()).toList();
+
     String? validSelectedLanguage = tts.selectedLanguage;
-    if (validSelectedLanguage != null && !languageStrings.contains(validSelectedLanguage)) {
-      // If selected language is not in available languages, use the first available one
-      validSelectedLanguage = languageStrings.isNotEmpty ? languageStrings.first : null;
-      // Update the TTS service with the valid language
+    if (validSelectedLanguage != null &&
+        !languageStrings.contains(validSelectedLanguage)) {
+      validSelectedLanguage =
+          languageStrings.isNotEmpty ? languageStrings.first : null;
+
       if (validSelectedLanguage != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           tts.updateLanguage(validSelectedLanguage);
         });
       }
     }
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -148,12 +149,13 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
                 labelText: 'Select Language'.tr(),
                 border: const OutlineInputBorder(),
               ),
-              items: languageStrings.map<DropdownMenuItem<String>>((langString) {
-                return DropdownMenuItem<String>(
-                  value: langString,
-                  child: Text(langString),
-                );
-              }).toList(),
+              items:
+                  languageStrings.map<DropdownMenuItem<String>>((langString) {
+                    return DropdownMenuItem<String>(
+                      value: langString,
+                      child: Text(langString),
+                    );
+                  }).toList(),
               onChanged: (String? value) {
                 if (value != null) {
                   tts.updateLanguage(value);
@@ -167,23 +169,26 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
   }
 
   Widget buildVoiceSection(TtsService tts) {
-    final voicesForLanguage = tts.getVoicesForLanguage(tts.selectedLanguage ?? 'en-US');
-    
-    // Ensure the selected voice exists in the available voices for the current language
+    final voicesForLanguage = tts.getVoicesForLanguage(
+      tts.selectedLanguage ?? 'en-US',
+    );
+
     String? validSelectedVoice = tts.selectedVoice;
-    final availableVoiceNames = voicesForLanguage.map((voice) => voice['name'].toString()).toList();
-    
-    if (validSelectedVoice != null && !availableVoiceNames.contains(validSelectedVoice)) {
-      // If selected voice is not available for current language, use the first available one
-      validSelectedVoice = availableVoiceNames.isNotEmpty ? availableVoiceNames.first : null;
-      // Update the TTS service with the valid voice
+    final availableVoiceNames =
+        voicesForLanguage.map((voice) => voice['name'].toString()).toList();
+
+    if (validSelectedVoice != null &&
+        !availableVoiceNames.contains(validSelectedVoice)) {
+      validSelectedVoice =
+          availableVoiceNames.isNotEmpty ? availableVoiceNames.first : null;
+
       if (validSelectedVoice != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           tts.updateVoice(validSelectedVoice);
         });
       }
     }
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -201,12 +206,13 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
                 labelText: 'Select Voice'.tr(),
                 border: const OutlineInputBorder(),
               ),
-              items: voicesForLanguage.map<DropdownMenuItem<String>>((voice) {
-                return DropdownMenuItem<String>(
-                  value: voice['name'].toString(),
-                  child: Text('${voice['name']} (${voice['locale']})'),
-                );
-              }).toList(),
+              items:
+                  voicesForLanguage.map<DropdownMenuItem<String>>((voice) {
+                    return DropdownMenuItem<String>(
+                      value: voice['name'].toString(),
+                      child: Text('${voice['name']} (${voice['locale']})'),
+                    );
+                  }).toList(),
               onChanged: (String? value) {
                 if (value != null) {
                   tts.updateVoice(value);
@@ -275,11 +281,7 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
             ),
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('0%'),
-                Text('50%'),
-                Text('100%'),
-              ],
+              children: [Text('0%'), Text('50%'), Text('100%')],
             ),
           ],
         ),
@@ -327,7 +329,10 @@ class TtsSettingsPageState extends State<TtsSettingsPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Reset Settings'.tr()),
-          content: Text('Are you sure you want to reset all voice settings to default?'.tr()),
+          content: Text(
+            'Are you sure you want to reset all voice settings to default?'
+                .tr(),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),

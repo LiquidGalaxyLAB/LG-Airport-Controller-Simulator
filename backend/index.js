@@ -438,6 +438,10 @@ io.on("connect", function (socket) {
       5: [],
     };
     isGameover = false;
+    successCount = 0;
+    wrongExitCount = 0;
+    conflictCount = 0;
+    baddepartureCount=0;
     startGamePlane();
     startCrossScreenConflictDetection();
     io.emit("gameStartData");
@@ -450,6 +454,7 @@ io.on("connect", function (socket) {
     successCount = 0;
     wrongExitCount = 0;
     conflictCount = 0;
+    baddepartureCount=0;
     isGameover = false;
     stopCrossScreenConflictDetection();
     planes = {
@@ -789,9 +794,6 @@ function checkCrossScreenConflicts() {
       }
     }
   }
-
-  // Clean up old conflicts and warnings
-  var allCurrentPairs = new Set([...newConflicts, ...newWarnings]);
 
   for (var conflict of crossScreenConflicts) {
     if (!newConflicts.has(conflict)) {

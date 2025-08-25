@@ -52,7 +52,6 @@ class AppThemes {
       shadowColor: Colors.grey[300],
       elevation: 2,
     ),
-    // Add more theme properties as needed
   );
   
   static ThemeData darkTheme = ThemeData(
@@ -70,25 +69,21 @@ class AppThemes {
       shadowColor: Colors.black,
       elevation: 2,
     ),
-    // Add more theme properties as needed
   );
 }
 
-// 3. Theme Helper Extension - Makes getting theme colors easy
 extension ThemeHelper on BuildContext {
   ThemeData get theme => Theme.of(this);
   ColorScheme get colors => theme.colorScheme;
   TextTheme get textTheme => theme.textTheme;
   bool get isDarkMode => theme.brightness == Brightness.dark;
   
-  // Custom color getters for your specific needs
   Color get connectionSuccessColor => isDarkMode ? Colors.green[400]! : Colors.green[600]!;
   Color get connectionErrorColor => isDarkMode ? Colors.red[400]! : Colors.red[600]!;
   Color get connectionPendingColor => isDarkMode ? Colors.orange[400]! : Colors.orange[600]!;
   Color get appbar  => isDarkMode ?  Colors.grey[600]! : Colors.white;
 }
 
-// 4. Theme-Aware Connection Status Widget (Updated)
 class ConnectionStatusWidget extends StatelessWidget {
   final TextStyle? textStyle;
   final bool showIcon;
@@ -147,7 +142,6 @@ class ConnectionStatusWidget extends StatelessWidget {
   }
 }
 
-// 5. Theme Toggle Button - Add anywhere
 class ThemeToggleButton extends StatelessWidget {
   final bool showText;
   
@@ -176,8 +170,6 @@ class ThemeToggleButton extends StatelessWidget {
     );
   }
 }
-
-// 6. Example: Theme-Aware Custom Card
 class ThemedCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
