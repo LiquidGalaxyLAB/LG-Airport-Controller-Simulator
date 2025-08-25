@@ -47,6 +47,8 @@ The system is designed to work seamlessly with Liquid Galaxy (LG) rigs, providin
 
 ## Mobile Connection
 
+[Download APK](https://store.liquidgalaxy.eu/index.html?app=LG%20Airport%20Controller%20Simulator)
+
 ### Step 1: Read Instructions
 - Open the mobile app
 - You will see an instruction page upon first launch
